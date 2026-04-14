@@ -1,0 +1,175 @@
+/**
+ * home.js — Home page: practice + history in one view.
+ */
+
+document.addEventListener("DOMContentLoaded", () => {
+    const questionHiragana = document.getElementById("question-hiragana");
+    const answerInput      = document.getElementById("answer-input");
+    const answerHiragana   = document.getElementById("answer-hiragana");
+    const checkBtn         = document.getElementById("check-btn");
+    const nextBtn          = document.getElementById("next-btn");
+    const feedbackInline   = document.getElementById("feedback-inline");
+    const fbIcon           = document.getElementById("fb-icon");
+    const fbText           = document.getElementById("fb-text");
+    const answerSection    = document.getElementById("answer-section");
+
+    const correctCountEl   = document.getElementById("correct-count");
+    const incorrectCountEl = document.getElementById("incorrect-count");
+    const streakCountEl    = document.getElementById("streak-count");
+
+    const historyList      = document.getElementById("history-list");
+    const historyEmpty     = document.getElementById("history-empty");
+
+    // Mode handling
+    const modeToggle = document.getElementById("mode-toggle");
+    
+    // Guard — elements may not exist if word_count == 0
+    if (!questionHiragana) return;
+
+    let currentWord = null;
+    let stats = { correct: 0, incorrect: 0, streak: 0 };
+
+    function getMode() {
+        return localStorage.getItem("mochi-practice-mode") || "jp-es";
+    }
+
+    function updateModeButton() {
+        if (!modeToggle) return;
+        const mode = getMode();
+        modeToggle.querySelector(".mode-text").textContent = mode === "jp-es" ? "あ → ES" : "ES → あ";
+    }
+
+    if (modeToggle) {
+        modeToggle.addEventListener("click", () => {
+            const currentMode = getMode();
+            const newMode = currentMode === "jp-es" ? "es-jp" : "jp-es";
+            localStorage.setItem("mochi-practice-mode", newMode);
+            updateModeButton();
+            if (currentWord && feedbackInline.hidden) {
+                questionHiragana.textContent = newMode === "jp-es" ? currentWord.hiragana : currentWord.translation;
+            }
+        });
+    }
+    updateModeButton();
+
+    // --- Load a random word ---
+    async function loadWord() {
+        try {
+            const res = await fetch("/api/words/random");
+            if (!res.ok) throw new Error();
+            currentWord = await res.json();
+            
+            const mode = getMode();
+            questionHiragana.textContent = mode === "jp-es" ? currentWord.hiragana : currentWord.translation;
+
+            // Animate in
+            questionHiragana.style.opacity = "0";
+            questionHiragana.style.transform = "scale(0.85)";
+            requestAnimationFrame(() => {
+                questionHiragana.style.transition = "all 0.35s cubic-bezier(0.34, 1.56, 0.64, 1)";
+                questionHiragana.style.opacity = "1";
+                questionHiragana.style.transform = "scale(1)";
+            });
+
+            // Reset UI
+            answerInput.value = "";
+            answerHiragana.textContent = "";
+            answerInput.disabled = false;
+            answerInput.focus();
+            answerSection.hidden = false;
+            feedbackInline.hidden = true;
+            checkBtn.disabled = false;
+        } catch {
+            questionHiragana.textContent = "—";
+        }
+    }
+
+    // --- Real-time hiragana preview while typing ---
+    answerInput.addEventListener("input", () => {
+        const val = answerInput.value.trim();
+        answerHiragana.textContent = val ? romajiToHiragana(val) : "";
+    });
+
+    // --- Check answer ---
+    function checkAnswer() {
+        if (!currentWord || checkBtn.disabled) return;
+
+        const val = answerInput.value.trim();
+        if (!val) {
+            answerInput.focus();
+            return;
+        }
+
+        const userHiragana = romajiToHiragana(val);
+        const isCorrect = userHiragana === currentWord.hiragana;
+
+        // Update stats
+        if (isCorrect) {
+            stats.correct++;
+            stats.streak++;
+        } else {
+            stats.incorrect++;
+            stats.streak = 0;
+        }
+        correctCountEl.textContent = stats.correct;
+        incorrectCountEl.textContent = stats.incorrect;
+        streakCountEl.textContent = stats.streak;
+
+        // Show inline feedback
+        answerInput.disabled = true;
+        checkBtn.disabled = true;
+        feedbackInline.hidden = false;
+        feedbackInline.className = `feedback-inline ${isCorrect ? "is-correct" : "is-incorrect"}`;
+        fbIcon.textContent = isCorrect ? "✓" : "✗";
+        
+        if (isCorrect) {
+            fbText.textContent = `¡Correcto! — ${currentWord.translation}`;
+        } else {
+            fbText.textContent = `${currentWord.romaji} (${currentWord.hiragana}) — ${currentWord.translation}`;
+        }
+
+        // Add to history
+        addHistoryEntry(currentWord, val, userHiragana, isCorrect);
+    }
+
+    checkBtn.addEventListener("click", checkAnswer);
+
+    document.addEventListener("keydown", (e) => {
+        if (e.key === "Enter") {
+            if (!feedbackInline.hidden) {
+                loadWord();
+            } else if (!answerInput.disabled) {
+                checkAnswer();
+            }
+        }
+    });
+
+    nextBtn.addEventListener("click", loadWord);
+
+    // --- History ---
+    function addHistoryEntry(word, userRomaji, userHiragana, isCorrect) {
+        if (historyEmpty) historyEmpty.remove();
+
+        const row = document.createElement("div");
+        row.className = `history-row ${isCorrect ? "history-correct" : "history-incorrect"}`;
+        row.innerHTML = `
+            <span class="history-status">${isCorrect ? "✓" : "✗"}</span>
+            <span class="history-hiragana">${escapeHtml(word.hiragana)}</span>
+            <span class="history-answer">${escapeHtml(userRomaji)} → ${escapeHtml(userHiragana)}</span>
+            <span class="history-translation">
+                ${escapeHtml(word.translation)}
+                ${word.note ? `<br><small class="history-note">${escapeHtml(word.note)}</small>` : ''}
+            </span>
+        `;
+
+        historyList.prepend(row);
+    }
+
+    function escapeHtml(str) {
+        const div = document.createElement("div");
+        div.textContent = str;
+        return div.innerHTML;
+    }
+
+    loadWord();
+});

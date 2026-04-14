@@ -1,0 +1,76 @@
+{% extends "base.html" %}
+
+{% block title %}Inicio{% endblock %}
+{% block nav_home %}active{% endblock %}
+
+{% block content %}
+<section class="page-section">
+    <div class="container container-sm">
+
+        {% if word_count == 0 %}
+        <div class="empty-state">
+            <div class="empty-icon">📚</div>
+            <h2>Tu colección está vacía</h2>
+            <p>Añade algunas palabras para empezar a practicar.</p>
+            <a href="/add" class="btn btn-primary">Añadir Palabras</a>
+        </div>
+        {% else %}
+
+        <!-- Flashcard -->
+        <div class="flashcard-container">
+            <div class="flashcard" id="flashcard">
+                <div class="flashcard-front">
+                    <span class="flashcard-hiragana" id="question-hiragana">—</span>
+                </div>
+            </div>
+        </div>
+
+        <!-- Answer input -->
+        <div class="answer-section" id="answer-section">
+            <div class="input-group">
+                <input type="text" id="answer-input" class="form-input answer-input" placeholder="Escribe en romaji..."
+                    autocomplete="off" autofocus>
+                <div class="hiragana-live" id="answer-hiragana"></div>
+            </div>
+            <button class="btn btn-primary btn-block" id="check-btn">
+                Comprobar
+            </button>
+        </div>
+
+        <!-- Inline feedback (appears briefly, then auto-advances) -->
+        <div class="feedback-inline" id="feedback-inline" hidden>
+            <span class="feedback-inline-icon" id="fb-icon"></span>
+            <span class="feedback-inline-text" id="fb-text"></span>
+            <button class="btn btn-secondary btn-sm" id="next-btn">Siguiente →</button>
+        </div>
+
+        <!-- Score bar -->
+        <div class="score-bar">
+            <div class="score-item score-correct">
+                <span class="score-icon">✓</span>
+                <span id="correct-count">0</span>
+            </div>
+            <div class="score-item score-incorrect">
+                <span class="score-icon">✗</span>
+                <span id="incorrect-count">0</span>
+            </div>
+            <div class="score-item score-streak">
+                <span class="score-icon">🔥</span>
+                <span id="streak-count">0</span>
+            </div>
+        </div>
+
+        <!-- History -->
+        <div class="history-section" id="history-section">
+            <div class="history-list" id="history-list">
+            </div>
+        </div>
+
+        {% endif %}
+    </div>
+</section>
+{% endblock %}
+
+{% block scripts %}
+<script src="/static/js/home.js"></script>
+{% endblock %}

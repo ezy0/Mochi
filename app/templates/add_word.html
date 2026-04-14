@@ -1,0 +1,128 @@
+{% extends "base.html" %}
+
+{% block title %}Añadir Palabra{% endblock %}
+{% block nav_add %}active{% endblock %}
+
+{% block content %}
+<section class="page-section">
+    <div class="container container-sm">
+        <div class="page-header">
+            <h1>Añadir Palabra</h1>
+            <p class="page-subtitle">Amplía tu vocabulario japonés</p>
+        </div>
+
+        <form id="add-word-form" class="card form-card">
+            <div class="form-group">
+                <label for="romaji" class="form-label">Romaji</label>
+                <input
+                    type="text"
+                    id="romaji"
+                    name="romaji"
+                    class="form-input"
+                    placeholder="ej: sakura"
+                    required
+                    autocomplete="off"
+                >
+                <div class="hiragana-preview" id="hiragana-preview">
+                    <span class="preview-label">Hiragana:</span>
+                    <span class="preview-text" id="preview-text">—</span>
+                </div>
+            </div>
+
+            <div class="form-group">
+                <label for="translation" class="form-label">Traducción (español)</label>
+                <input
+                    type="text"
+                    id="translation"
+                    name="translation"
+                    class="form-input"
+                    placeholder="ej: cerezo"
+                    required
+                >
+            </div>
+
+            <div class="form-group">
+                <label for="note" class="form-label">
+                    Nota / Ejemplo
+                    <span class="label-optional">(opcional)</span>
+                </label>
+                <textarea
+                    id="note"
+                    name="note"
+                    class="form-input form-textarea"
+                    placeholder="ej: Flor de cerezo, símbolo de Japón"
+                    rows="3"
+                ></textarea>
+            </div>
+
+            <button type="submit" class="btn btn-primary btn-block" id="submit-btn">
+                Guardar Palabra
+            </button>
+        </form>
+
+        <!-- Toast notification -->
+        <div class="toast" id="toast" aria-live="polite"></div>
+
+        <!-- Recent words list -->
+        <div class="recent-words" id="recent-words">
+            <div class="search-bar-container">
+                                <input
+                    type="text"
+                    id="word-search"
+                    class="form-input"
+                    placeholder="Buscar palabra (japonés o español)..."
+                    autocomplete="off"
+                >
+            </div>
+            
+            <h2 class="section-title">Tu Colección</h2>
+            <div class="word-list" id="word-list"></div>
+        </div>
+    </div>
+</section>
+
+<!-- Edit Modal -->
+<div class="modal-overlay" id="edit-modal">
+    <div class="modal-content card">
+        <div class="modal-header">
+            <h3>Editar Palabra</h3>
+            <button class="modal-close" id="modal-close">&times;</button>
+        </div>
+        <form id="edit-word-form" class="modal-form">
+            <input type="hidden" id="edit-id">
+            <div class="form-group">
+                <label for="edit-romaji" class="form-label">Romaji</label>
+                <input type="text" id="edit-romaji" class="form-input" required autocomplete="off">
+            </div>
+            <div class="form-group">
+                <label for="edit-translation" class="form-label">Traducción</label>
+                <input type="text" id="edit-translation" class="form-input" required>
+            </div>
+            <div class="form-group">
+                <label for="edit-note" class="form-label">Nota</label>
+                <textarea id="edit-note" class="form-input form-textarea" rows="3"></textarea>
+            </div>
+            <div class="modal-actions">
+                <button type="button" class="btn btn-secondary" id="modal-cancel">Cancelar</button>
+                <button type="submit" class="btn btn-primary">Guardar Cambios</button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<!-- Confirm Modal -->
+<div class="modal-overlay" id="confirm-modal">
+    <div class="modal-content card" style="max-width: 400px; text-align: center;">
+        <h3 style="margin-bottom: var(--space-4);">Palabra repetida</h3>
+        <p id="confirm-msg" style="color: var(--color-text-muted); margin-bottom: var(--space-8);"></p>
+        <div class="modal-actions">
+            <button type="button" class="btn btn-secondary" id="confirm-cancel">Cancelar</button>
+            <button type="button" class="btn btn-primary" id="confirm-ok">Añadir</button>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script src="/static/js/add_word.js"></script>
+{% endblock %}
