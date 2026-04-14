@@ -10,8 +10,15 @@ document.addEventListener("DOMContentLoaded", () => {
     const toast       = document.getElementById("toast");
     const wordList    = document.getElementById("word-list");
     const searchInput = document.getElementById("word-search");
+    const exportBtn   = document.getElementById("export-csv-btn");
+    const importBtn   = document.getElementById("import-csv-btn");
+    const importFile  = document.getElementById("import-csv-file");
+    const settingsToggle = document.getElementById("settings-toggle");
+    const settingsDropdown = document.getElementById("settings-dropdown");
+    const toggleViewBtn = document.getElementById("toggle-view-btn");
 
     let allWords = []; // To check for duplicates globally
+    let showAllWords = false;
 
     // --- Real-time hiragana preview ---
     romajiInput.addEventListener("input", () => {
@@ -99,6 +106,86 @@ document.addEventListener("DOMContentLoaded", () => {
     searchInput.addEventListener("input", () => {
         const query = searchInput.value.trim().toLowerCase();
         refreshWordList(query);
+    });
+
+    // --- Settings dropdown ---
+    settingsToggle.addEventListener("click", (e) => {
+        e.stopPropagation();
+        settingsDropdown.classList.toggle("is-open");
+        settingsDropdown.setAttribute(
+            "aria-hidden",
+            settingsDropdown.classList.contains("is-open") ? "false" : "true"
+        );
+    });
+
+    document.addEventListener("click", (e) => {
+        if (!settingsDropdown.classList.contains("is-open")) return;
+        if (settingsDropdown.contains(e.target) || settingsToggle.contains(e.target)) return;
+        settingsDropdown.classList.remove("is-open");
+        settingsDropdown.setAttribute("aria-hidden", "true");
+    });
+
+    // --- Toggle view all ---
+    toggleViewBtn.addEventListener("click", () => {
+        showAllWords = !showAllWords;
+        toggleViewBtn.textContent = showAllWords ? "Ver recientes" : "Ver todas";
+        const query = searchInput.value.trim().toLowerCase();
+        refreshWordList(query);
+    });
+
+    // --- Export CSV ---
+    exportBtn.addEventListener("click", async () => {
+        try {
+            const res = await fetch("/api/words/export");
+            if (!res.ok) throw new Error("Error al exportar");
+
+            const blob = await res.blob();
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement("a");
+            a.href = url;
+            a.download = "mochi_words.csv";
+            document.body.appendChild(a);
+            a.click();
+            a.remove();
+            URL.revokeObjectURL(url);
+        } catch (err) {
+            showToast(err.message || "Error al exportar", "error");
+        }
+    });
+
+    // --- Import CSV ---
+    importBtn.addEventListener("click", () => {
+        importFile.value = "";
+        importFile.click();
+    });
+
+    importFile.addEventListener("change", async () => {
+        const file = importFile.files?.[0];
+        if (!file) return;
+
+        const formData = new FormData();
+        formData.append("file", file);
+
+        try {
+            const res = await fetch("/api/words/import", {
+                method: "POST",
+                body: formData,
+            });
+
+            if (!res.ok) {
+                const err = await res.json();
+                throw new Error(err.detail || "Error al importar");
+            }
+
+            const data = await res.json();
+            const imported = data.imported ?? 0;
+            const skipped = data.skipped ?? 0;
+            showToast(`Importadas: ${imported}. Duplicadas: ${skipped}.`, "success");
+
+            await loadWords();
+        } catch (err) {
+            showToast(err.message || "Error al importar", "error");
+        }
     });
 
     // --- Modal logic (Edit) ---
@@ -225,7 +312,7 @@ document.addEventListener("DOMContentLoaded", () => {
                 const haystack = `${word.hiragana} ${word.romaji} ${word.translation} ${word.note || ""}`.toLowerCase();
                 return haystack.includes(query);
             });
-        } else {
+        } else if (!showAllWords) {
             list = sorted.slice(0, 5);
         }
 
@@ -254,7 +341,8 @@ document.addEventListener("DOMContentLoaded", () => {
         try {
             const response = await fetch("/api/words/?limit=1000");
             allWords = await response.json();
-            refreshWordList();
+            const query = searchInput.value.trim().toLowerCase();
+            refreshWordList(query);
         } catch {
             // Silently fail
         }

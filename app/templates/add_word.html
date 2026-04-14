@@ -65,17 +65,22 @@
 
         <!-- Recent words list -->
         <div class="recent-words" id="recent-words">
-            <div class="search-bar-container">
-                                <input
-                    type="text"
-                    id="word-search"
-                    class="form-input"
-                    placeholder="Buscar palabra (japonés o español)..."
-                    autocomplete="off"
-                >
+            <div class="collection-toolbar">
+                <div class="search-bar-container">
+                    <input
+                        type="text"
+                        id="word-search"
+                        class="form-input"
+                        placeholder="Buscar palabra (japonés o español)..."
+                        autocomplete="off"
+                    >
+                </div>
             </div>
-            
-            <h2 class="section-title">Palabras añadidas recientemente</h2>
+
+            <div class="collection-header">
+                <h2 class="section-title">Palabras añadidas recientemente</h2>
+                <button type="button" class="btn btn-secondary btn-sm" id="toggle-view-btn">Ver todas</button>
+            </div>
             <div class="word-list" id="word-list"></div>
         </div>
     </div>
@@ -125,4 +130,20 @@
 
 {% block scripts %}
 <script src="/static/js/add_word.js"></script>
+{% endblock %}
+
+{% block nav_settings %}
+<div class="settings-menu nav-settings">
+    <button type="button" class="settings-toggle" id="settings-toggle" aria-label="Ajustes">
+        <svg class="settings-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+            <circle cx="12" cy="12" r="3.5"></circle>
+            <path d="M19.4 15a1.7 1.7 0 0 0 .34 1.87l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.7 1.7 0 0 0-1.87-.34 1.7 1.7 0 0 0-1 1.54V21a2 2 0 0 1-4 0v-.08a1.7 1.7 0 0 0-1-1.54 1.7 1.7 0 0 0-1.87.34l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06a1.7 1.7 0 0 0 .34-1.87 1.7 1.7 0 0 0-1.54-1H3a2 2 0 0 1 0-4h.08a1.7 1.7 0 0 0 1.54-1 1.7 1.7 0 0 0-.34-1.87l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06a1.7 1.7 0 0 0 1.87.34 1.7 1.7 0 0 0 1-1.54V3a2 2 0 0 1 4 0v.08a1.7 1.7 0 0 0 1 1.54 1.7 1.7 0 0 0 1.87-.34l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06a1.7 1.7 0 0 0-.34 1.87 1.7 1.7 0 0 0 1.54 1H21a2 2 0 0 1 0 4h-.08a1.7 1.7 0 0 0-1.54 1Z"></path>
+        </svg>
+    </button>
+    <div class="settings-dropdown" id="settings-dropdown" aria-hidden="true">
+        <button type="button" class="btn btn-secondary btn-sm" id="export-csv-btn">Exportar CSV</button>
+        <button type="button" class="btn btn-secondary btn-sm" id="import-csv-btn">Importar CSV</button>
+        <input type="file" id="import-csv-file" accept=".csv" hidden>
+    </div>
+</div>
 {% endblock %}

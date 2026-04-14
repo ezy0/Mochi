@@ -12,6 +12,7 @@ document.addEventListener("DOMContentLoaded", () => {
     const fbIcon           = document.getElementById("fb-icon");
     const fbText           = document.getElementById("fb-text");
     const answerSection    = document.getElementById("answer-section");
+    const ttsBtn           = document.getElementById("tts-btn");
 
     const correctCountEl   = document.getElementById("correct-count");
     const incorrectCountEl = document.getElementById("incorrect-count");
@@ -37,6 +38,10 @@ document.addEventListener("DOMContentLoaded", () => {
         if (!modeToggle) return;
         const mode = getMode();
         modeToggle.querySelector(".mode-text").textContent = mode === "jp-es" ? "あ → ES" : "ES → あ";
+        if (ttsBtn) {
+            ttsBtn.hidden = mode !== "jp-es";
+        }
+        updateHistoryTtsButtons(mode);
     }
 
     if (modeToggle) {
@@ -51,6 +56,23 @@ document.addEventListener("DOMContentLoaded", () => {
         });
     }
     updateModeButton();
+
+    async function playTts() {
+        if (!currentWord) return;
+        try {
+            const audio = new Audio(`/api/words/${currentWord.id}/tts`);
+            await audio.play();
+        } catch {
+            // ignore playback errors
+        }
+    }
+
+    if (ttsBtn) {
+        ttsBtn.addEventListener("click", () => {
+            ttsBtn.blur();
+            playTts();
+        });
+    }
 
     // --- Load a random word ---
     async function loadWord() {
@@ -79,6 +101,7 @@ document.addEventListener("DOMContentLoaded", () => {
             answerSection.hidden = false;
             feedbackInline.hidden = true;
             checkBtn.disabled = false;
+            updateModeButton();
         } catch {
             questionHiragana.textContent = "—";
         }
@@ -136,6 +159,11 @@ document.addEventListener("DOMContentLoaded", () => {
 
     document.addEventListener("keydown", (e) => {
         if (e.key === "Enter") {
+            const active = document.activeElement;
+            if (active && (active.classList.contains("history-tts") || active.id === "tts-btn")) {
+                active.blur();
+                return;
+            }
             if (!feedbackInline.hidden) {
                 loadWord();
             } else if (!answerInput.disabled) {
@@ -160,9 +188,37 @@ document.addEventListener("DOMContentLoaded", () => {
                 ${escapeHtml(word.translation)}
                 ${word.note ? `<br><small class="history-note">${escapeHtml(word.note)}</small>` : ''}
             </span>
+            <button class="history-tts" type="button" aria-label="Escuchar pronunciación" data-word-id="${word.id}">
+                <svg class="history-tts-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                    <path d="M5 10v4h4l5 4V6l-5 4H5z"></path>
+                    <path d="M15.5 9.5a3 3 0 0 1 0 5"></path>
+                    <path d="M18 7a6 6 0 0 1 0 10"></path>
+                </svg>
+            </button>
         `;
 
+        const ttsButton = row.querySelector(".history-tts");
+        if (ttsButton) {
+            ttsButton.hidden = getMode() !== "jp-es";
+            ttsButton.addEventListener("click", async () => {
+                ttsButton.blur();
+                try {
+                    const audio = new Audio(`/api/words/${word.id}/tts`);
+                    await audio.play();
+                } catch {
+                    // ignore playback errors
+                }
+            });
+        }
+
         historyList.prepend(row);
+    }
+
+    function updateHistoryTtsButtons(mode = getMode()) {
+        const buttons = historyList.querySelectorAll(".history-tts");
+        buttons.forEach((button) => {
+            button.hidden = mode !== "jp-es";
+        });
     }
 
     function escapeHtml(str) {
