@@ -69,10 +69,14 @@ def romaji_to_hiragana(text: str) -> str:
     """
     text = text.lower().strip()
     result: list[str] = []
+    ignore_chars = {" ", "'", "-"}
     i = 0
     length = len(text)
 
     while i < length:
+        if text[i] in ignore_chars:
+            i += 1
+            continue
         # --- Geminate consonant (っ): same consonant repeated ---
         if (
             i + 1 < length

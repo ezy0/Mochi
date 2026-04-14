@@ -59,8 +59,13 @@ function romajiToHiragana(text) {
     text = text.toLowerCase().trim();
     const result = [];
     let i = 0;
+    const IGNORE_CHARS = new Set([" ", "'", "-"]);
 
     while (i < text.length) {
+        if (IGNORE_CHARS.has(text[i])) {
+            i++;
+            continue;
+        }
         // Geminate consonant → っ
         if (
             i + 1 < text.length &&

@@ -98,13 +98,7 @@ document.addEventListener("DOMContentLoaded", () => {
     // --- Search logic ---
     searchInput.addEventListener("input", () => {
         const query = searchInput.value.trim().toLowerCase();
-        const items = wordList.getElementsByClassName("word-item");
-        
-        for (const item of items) {
-            const textContent = item.textContent.toLowerCase();
-            const matches = textContent.includes(query);
-            item.style.display = matches ? "flex" : "none";
-        }
+        refreshWordList(query);
     });
 
     // --- Modal logic (Edit) ---
@@ -221,13 +215,22 @@ document.addEventListener("DOMContentLoaded", () => {
         refreshWordList();
     }
 
-    function refreshWordList() {
+    function refreshWordList(query = "") {
         wordList.innerHTML = "";
         const sorted = [...allWords].sort((a, b) => b.id - a.id);
-        const recent = sorted.slice(0, 5);
-        
-        recent.forEach(w => {
-            wordList.appendChild(createWordItem(w));
+
+        let list = sorted;
+        if (query) {
+            list = sorted.filter((word) => {
+                const haystack = `${word.hiragana} ${word.romaji} ${word.translation} ${word.note || ""}`.toLowerCase();
+                return haystack.includes(query);
+            });
+        } else {
+            list = sorted.slice(0, 5);
+        }
+
+        list.forEach((word) => {
+            wordList.appendChild(createWordItem(word));
         });
     }
 
