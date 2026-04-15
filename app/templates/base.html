@@ -5,6 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <meta name="description" content="Mochi — Aprende japonés con flashcards interactivas. Practica hiragana escribiendo en romaji.">
     <title>{% block title %}Mochi{% endblock %} — Aprende Japonés</title>
+    <link rel="icon" type="image/x-icon" href="/static/mochi.ico">
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Noto+Sans+JP:wght@300;400;500;700&display=swap" rel="stylesheet">
@@ -21,7 +22,7 @@
     <nav class="navbar">
         <div class="nav-container">
             <a href="/" class="nav-logo">
-                <span class="logo-icon">🍡</span>
+                <img src="/static/mochi.png" alt="Mochi" class="logo-icon">
                 <span class="logo-text">Mochi</span>
             </a>
             <div class="nav-links">
@@ -35,6 +36,9 @@
                 <button id="mode-toggle" class="nav-mode-toggle" title="Cambiar dirección de práctica">
                     <span class="mode-text">あ → ES</span>
                 </button>
+                <button id="hiragana-help-btn" class="nav-help-btn" title="Tabla de hiragana">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9.09 9a3 3 0 1 1 5.82 1c0 2-3 2-3 4"></path><line x1="12" y1="17" x2="12" y2="17"></line></svg>
+                </button>
                 {% block nav_settings %}{% endblock %}
             </div>
         </div>
@@ -46,6 +50,211 @@
 
     <script src="/static/js/romaji.js"></script>
     {% block scripts %}{% endblock %}
+    
+    <!-- Hiragana Help Modal -->
+    <div id="hiragana-modal" class="hiragana-modal">
+        <div class="hiragana-chart">
+            <div class="modal-header">
+                <h2>Hiragana Básico</h2>
+                <button id="hiragana-modal-close" class="modal-close">×</button>
+            </div>
+            <div class="modal-body">
+                    <div class="hiragana-section">
+                        <table class="hiragana-table">
+                            <tr>
+                                <td><span class="hiragana">あ</span><span class="romaji">a</span></td>
+                                <td><span class="hiragana">い</span><span class="romaji">i</span></td>
+                                <td><span class="hiragana">う</span><span class="romaji">u</span></td>
+                                <td><span class="hiragana">え</span><span class="romaji">e</span></td>
+                                <td><span class="hiragana">お</span><span class="romaji">o</span></td>
+                            </tr>
+                            <tr>
+                                <td><span class="hiragana">か</span><span class="romaji">ka</span></td>
+                                <td><span class="hiragana">き</span><span class="romaji">ki</span></td>
+                                <td><span class="hiragana">く</span><span class="romaji">ku</span></td>
+                                <td><span class="hiragana">け</span><span class="romaji">ke</span></td>
+                                <td><span class="hiragana">こ</span><span class="romaji">ko</span></td>
+                            </tr>
+                            <tr>
+                                <td><span class="hiragana">が</span><span class="romaji">ga</span></td>
+                                <td><span class="hiragana">ぎ</span><span class="romaji">gi</span></td>
+                                <td><span class="hiragana">ぐ</span><span class="romaji">gu</span></td>
+                                <td><span class="hiragana">げ</span><span class="romaji">ge</span></td>
+                                <td><span class="hiragana">ご</span><span class="romaji">go</span></td>
+                            </tr>
+                            <tr>
+                                <td><span class="hiragana">さ</span><span class="romaji">sa</span></td>
+                                <td><span class="hiragana">し</span><span class="romaji">shi</span></td>
+                                <td><span class="hiragana">す</span><span class="romaji">su</span></td>
+                                <td><span class="hiragana">せ</span><span class="romaji">se</span></td>
+                                <td><span class="hiragana">そ</span><span class="romaji">so</span></td>
+                            </tr>
+                            <tr>
+                                <td><span class="hiragana">ざ</span><span class="romaji">za</span></td>
+                                <td><span class="hiragana">じ</span><span class="romaji">ji</span></td>
+                                <td><span class="hiragana">ず</span><span class="romaji">zu</span></td>
+                                <td><span class="hiragana">ぜ</span><span class="romaji">ze</span></td>
+                                <td><span class="hiragana">ぞ</span><span class="romaji">zo</span></td>
+                            </tr>
+                            <tr>
+                                <td><span class="hiragana">た</span><span class="romaji">ta</span></td>
+                                <td><span class="hiragana">ち</span><span class="romaji">chi</span></td>
+                                <td><span class="hiragana">つ</span><span class="romaji">tsu</span></td>
+                                <td><span class="hiragana">て</span><span class="romaji">te</span></td>
+                                <td><span class="hiragana">と</span><span class="romaji">to</span></td>
+                            </tr>
+                            <tr>
+                                <td><span class="hiragana">だ</span><span class="romaji">da</span></td>
+                                <td><span class="hiragana">ぢ</span><span class="romaji">di</span></td>
+                                <td><span class="hiragana">づ</span><span class="romaji">du</span></td>
+                                <td><span class="hiragana">で</span><span class="romaji">de</span></td>
+                                <td><span class="hiragana">ど</span><span class="romaji">do</span></td>
+                            </tr>
+                            <tr>
+                                <td><span class="hiragana">は</span><span class="romaji">ha</span></td>
+                                <td><span class="hiragana">ひ</span><span class="romaji">hi</span></td>
+                                <td><span class="hiragana">ふ</span><span class="romaji">fu</span></td>
+                                <td><span class="hiragana">へ</span><span class="romaji">he</span></td>
+                                <td><span class="hiragana">ほ</span><span class="romaji">ho</span></td>
+                            </tr>
+                            <tr>
+                                <td><span class="hiragana">ば</span><span class="romaji">ba</span></td>
+                                <td><span class="hiragana">び</span><span class="romaji">bi</span></td>
+                                <td><span class="hiragana">ぶ</span><span class="romaji">bu</span></td>
+                                <td><span class="hiragana">べ</span><span class="romaji">be</span></td>
+                                <td><span class="hiragana">ぼ</span><span class="romaji">bo</span></td>
+                            </tr>
+                            <tr>
+                                <td><span class="hiragana">ぱ</span><span class="romaji">pa</span></td>
+                                <td><span class="hiragana">ぴ</span><span class="romaji">pi</span></td>
+                                <td><span class="hiragana">ぷ</span><span class="romaji">pu</span></td>
+                                <td><span class="hiragana">ぺ</span><span class="romaji">pe</span></td>
+                                <td><span class="hiragana">ぽ</span><span class="romaji">po</span></td>
+                            </tr>
+                            <tr>
+                                <td><span class="hiragana">な</span><span class="romaji">na</span></td>
+                                <td><span class="hiragana">に</span><span class="romaji">ni</span></td>
+                                <td><span class="hiragana">ぬ</span><span class="romaji">nu</span></td>
+                                <td><span class="hiragana">ね</span><span class="romaji">ne</span></td>
+                                <td><span class="hiragana">の</span><span class="romaji">no</span></td>
+                            </tr>
+                            <tr>
+                                <td><span class="hiragana">ま</span><span class="romaji">ma</span></td>
+                                <td><span class="hiragana">み</span><span class="romaji">mi</span></td>
+                                <td><span class="hiragana">む</span><span class="romaji">mu</span></td>
+                                <td><span class="hiragana">め</span><span class="romaji">me</span></td>
+                                <td><span class="hiragana">も</span><span class="romaji">mo</span></td>
+                            </tr>
+                            <tr>
+                                <td><span class="hiragana">や</span><span class="romaji">ya</span></td>
+                                <td></td>
+                                <td><span class="hiragana">ゆ</span><span class="romaji">yu</span></td>
+                                <td></td>
+                                <td><span class="hiragana">よ</span><span class="romaji">yo</span></td>
+                            </tr>
+                            <tr>
+                                <td><span class="hiragana">ら</span><span class="romaji">ra</span></td>
+                                <td><span class="hiragana">り</span><span class="romaji">ri</span></td>
+                                <td><span class="hiragana">る</span><span class="romaji">ru</span></td>
+                                <td><span class="hiragana">れ</span><span class="romaji">re</span></td>
+                                <td><span class="hiragana">ろ</span><span class="romaji">ro</span></td>
+                            </tr>
+                            <tr>
+                                <td><span class="hiragana">わ</span><span class="romaji">wa</span></td>
+                                <td><span class="hiragana">を</span><span class="romaji">wo</span></td>
+                                <td colspan="3"><span class="hiragana">ん</span><span class="romaji">n</span></td>
+                            </tr>
+                            <tr>
+                                <td><span class="hiragana">きゃ</span><span class="romaji">kya</span></td>
+                                <td></td>
+                                <td><span class="hiragana">きゅ</span><span class="romaji">kyu</span></td>
+                                <td></td>
+                                <td><span class="hiragana">きょ</span><span class="romaji">kyo</span></td>
+                            </tr>
+                            <tr>
+                                <td><span class="hiragana">ぎゃ</span><span class="romaji">gya</span></td>
+                                <td></td>
+                                <td><span class="hiragana">ぎゅ</span><span class="romaji">gyu</span></td>
+                                <td></td>
+                                <td><span class="hiragana">ぎょ</span><span class="romaji">gyo</span></td>
+                            </tr>
+                            <tr>
+                                <td><span class="hiragana">しゃ</span><span class="romaji">sha</span></td>
+                                <td></td>
+                                <td><span class="hiragana">しゅ</span><span class="romaji">shu</span></td>
+                                <td></td>
+                                <td><span class="hiragana">しょ</span><span class="romaji">sho</span></td>
+                            </tr>
+                            <tr>
+                                <td><span class="hiragana">じゃ</span><span class="romaji">ja</span></td>
+                                <td></td>
+                                <td><span class="hiragana">じゅ</span><span class="romaji">ju</span></td>
+                                <td></td>
+                                <td><span class="hiragana">じょ</span><span class="romaji">jo</span></td>
+                            </tr>
+                            <tr>
+                                <td><span class="hiragana">ちゃ</span><span class="romaji">cha</span></td>
+                                <td></td>
+                                <td><span class="hiragana">ちゅ</span><span class="romaji">chu</span></td>
+                                <td></td>
+                                <td><span class="hiragana">ちょ</span><span class="romaji">cho</span></td>
+                            </tr>
+                            <tr>
+                                <td><span class="hiragana">ぢゃ</span><span class="romaji">dya</span></td>
+                                <td></td>
+                                <td><span class="hiragana">ぢゅ</span><span class="romaji">dyu</span></td>
+                                <td></td>
+                                <td><span class="hiragana">ぢょ</span><span class="romaji">dyo</span></td>
+                            </tr>
+                            <tr>
+                                <td><span class="hiragana">ひゃ</span><span class="romaji">hya</span></td>
+                                <td></td>
+                                <td><span class="hiragana">ひゅ</span><span class="romaji">hyu</span></td>
+                                <td></td>
+                                <td><span class="hiragana">ひょ</span><span class="romaji">hyo</span></td>
+                            </tr>
+                            <tr>
+                                <td><span class="hiragana">びゃ</span><span class="romaji">bya</span></td>
+                                <td></td>
+                                <td><span class="hiragana">びゅ</span><span class="romaji">byu</span></td>
+                                <td></td>
+                                <td><span class="hiragana">びょ</span><span class="romaji">byo</span></td>
+                            </tr>
+                            <tr>
+                                <td><span class="hiragana">ぴゃ</span><span class="romaji">pya</span></td>
+                                <td></td>
+                                <td><span class="hiragana">ぴゅ</span><span class="romaji">pyu</span></td>
+                                <td></td>
+                                <td><span class="hiragana">ぴょ</span><span class="romaji">pyo</span></td>
+                            </tr>
+                            <tr>
+                                <td><span class="hiragana">にゃ</span><span class="romaji">nya</span></td>
+                                <td></td>
+                                <td><span class="hiragana">にゅ</span><span class="romaji">nyu</span></td>
+                                <td></td>
+                                <td><span class="hiragana">にょ</span><span class="romaji">nyo</span></td>
+                            </tr>
+                            <tr>
+                                <td><span class="hiragana">みゃ</span><span class="romaji">mya</span></td>
+                                <td></td>
+                                <td><span class="hiragana">みゅ</span><span class="romaji">myu</span></td>
+                                <td></td>
+                                <td><span class="hiragana">みょ</span><span class="romaji">myo</span></td>
+                            </tr>
+                            <tr>
+                                <td><span class="hiragana">りゃ</span><span class="romaji">rya</span></td>
+                                <td></td>
+                                <td><span class="hiragana">りゅ</span><span class="romaji">ryu</span></td>
+                                <td></td>
+                                <td><span class="hiragana">りょ</span><span class="romaji">ryo</span></td>
+                            </tr>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
     <script>
         document.getElementById('theme-toggle').addEventListener('click', () => {
             const currentTheme = document.documentElement.getAttribute('data-theme') || 'light';
@@ -53,7 +262,69 @@
             document.documentElement.setAttribute('data-theme', newTheme);
             localStorage.setItem('mochi-theme', newTheme);
         });
+
+        // Hiragana Modal
+        const hiraganaModal = document.getElementById('hiragana-modal');
+        const hiraganaHelpBtn = document.getElementById('hiragana-help-btn');
+        const hiraganaModalClose = document.getElementById('hiragana-modal-close');
+
+        function createHiraganaTtsButton(kana) {
+            const btn = document.createElement('button');
+            btn.type = 'button';
+            btn.className = 'hiragana-tts-btn';
+            btn.setAttribute('aria-label', `Escuchar ${kana}`);
+            btn.dataset.kana = kana;
+            btn.innerHTML = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M11 5L6 9H3v6h3l5 4V5z"></path><path d="M15.5 8.5a5 5 0 0 1 0 7"></path></svg>';
+            return btn;
+        }
+
+        async function playHiraganaTts(kana) {
+            try {
+                const audio = new Audio(`/api/words/hiragana/tts?kana=${encodeURIComponent(kana)}`);
+                await audio.play();
+            } catch (err) {
+                console.error('Error reproduciendo TTS:', err);
+            }
+        }
+
+        function initializeHiraganaTtsButtons() {
+            const hiraganaCells = document.querySelectorAll('.hiragana-table td');
+            hiraganaCells.forEach((cell) => {
+                const kanaElement = cell.querySelector('.hiragana');
+                if (!kanaElement) return;
+
+                const kana = kanaElement.textContent.trim();
+                if (!kana) return;
+
+                // Skip if already has a button
+                if (cell.querySelector('.hiragana-tts-btn')) return;
+
+                const speakerBtn = createHiraganaTtsButton(kana);
+                speakerBtn.addEventListener('click', (e) => {
+                    e.stopPropagation();
+                    speakerBtn.blur();
+                    playHiraganaTts(kana);
+                });
+
+                cell.appendChild(speakerBtn);
+            });
+        }
+
+        hiraganaHelpBtn.addEventListener('click', () => {
+            hiraganaModal.style.display = 'flex';
+            initializeHiraganaTtsButtons();
+        });
+
+        hiraganaModalClose.addEventListener('click', () => {
+            hiraganaModal.style.display = 'none';
+        });
+
+        hiraganaModal.addEventListener('click', (e) => {
+            if (e.target === hiraganaModal) {
+                hiraganaModal.style.display = 'none';
+            }
+        });
     </script>
-    <div class="app-version">Mochi v0.1</div>
+    <div class="app-version">Mochi v0.2</div>
 </body>
 </html>

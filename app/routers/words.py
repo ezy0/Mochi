@@ -2,7 +2,7 @@
 import csv
 import io
 
-from fastapi import APIRouter, Depends, HTTPException, UploadFile
+from fastapi import APIRouter, Depends, HTTPException, Query, UploadFile
 from fastapi.responses import StreamingResponse
 from sqlalchemy.orm import Session
 
@@ -51,6 +51,17 @@ def delete_word(word_id: int, db: Session = Depends(get_db)):
     """Delete a word by ID."""
     if not WordService.delete(db, word_id):
         raise HTTPException(status_code=404, detail="Palabra no encontrada.")
+
+
+@router.get("/hiragana/tts")
+def tts_hiragana(kana: str = Query(..., min_length=1, max_length=4)):
+    """Generate Japanese TTS audio for a hiragana syllable."""
+    kana = kana.strip()
+    if not kana:
+        raise HTTPException(status_code=400, detail="Sílaba inválida.")
+
+    audio = synthesize_japanese(kana)
+    return StreamingResponse(io.BytesIO(audio), media_type="audio/mpeg")
 
 
 @router.get("/{word_id}/tts")

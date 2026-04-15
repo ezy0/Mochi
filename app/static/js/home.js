@@ -13,6 +13,12 @@ document.addEventListener("DOMContentLoaded", () => {
     const fbText           = document.getElementById("fb-text");
     const answerSection    = document.getElementById("answer-section");
     const ttsBtn           = document.getElementById("tts-btn");
+    const toast            = document.getElementById("toast");
+    const exportBtn        = document.getElementById("export-csv-btn");
+    const importBtn        = document.getElementById("import-csv-btn");
+    const importFile       = document.getElementById("import-csv-file");
+    const settingsToggle   = document.getElementById("settings-toggle");
+    const settingsDropdown = document.getElementById("settings-dropdown");
 
     const correctCountEl   = document.getElementById("correct-count");
     const incorrectCountEl = document.getElementById("incorrect-count");
@@ -44,6 +50,16 @@ document.addEventListener("DOMContentLoaded", () => {
         updateHistoryTtsButtons(mode);
     }
 
+    function showToast(message, type = "success") {
+        if (!toast) return;
+        clearTimeout(window.toastTimer);
+        toast.textContent = message;
+        toast.className = `toast toast-${type} show`;
+        window.toastTimer = setTimeout(() => {
+            toast.classList.remove("show");
+        }, 3000);
+    }
+
     if (modeToggle) {
         modeToggle.addEventListener("click", () => {
             const currentMode = getMode();
@@ -71,6 +87,79 @@ document.addEventListener("DOMContentLoaded", () => {
         ttsBtn.addEventListener("click", () => {
             ttsBtn.blur();
             playTts();
+        });
+    }
+
+    if (settingsToggle && settingsDropdown) {
+        settingsToggle.addEventListener("click", (e) => {
+            e.stopPropagation();
+            settingsDropdown.classList.toggle("is-open");
+            settingsDropdown.setAttribute(
+                "aria-hidden",
+                settingsDropdown.classList.contains("is-open") ? "false" : "true"
+            );
+        });
+
+        document.addEventListener("click", (e) => {
+            if (!settingsDropdown.classList.contains("is-open")) return;
+            if (settingsDropdown.contains(e.target) || settingsToggle.contains(e.target)) return;
+            settingsDropdown.classList.remove("is-open");
+            settingsDropdown.setAttribute("aria-hidden", "true");
+        });
+    }
+
+    if (exportBtn) {
+        exportBtn.addEventListener("click", async () => {
+            try {
+                const res = await fetch("/api/words/export");
+                if (!res.ok) throw new Error("Error al exportar");
+
+                const blob = await res.blob();
+                const url = URL.createObjectURL(blob);
+                const a = document.createElement("a");
+                a.href = url;
+                a.download = "mochi_words.csv";
+                document.body.appendChild(a);
+                a.click();
+                a.remove();
+                URL.revokeObjectURL(url);
+            } catch (err) {
+                showToast(err.message || "Error al exportar", "error");
+            }
+        });
+    }
+
+    if (importBtn && importFile) {
+        importBtn.addEventListener("click", () => {
+            importFile.value = "";
+            importFile.click();
+        });
+
+        importFile.addEventListener("change", async () => {
+            const file = importFile.files?.[0];
+            if (!file) return;
+
+            const formData = new FormData();
+            formData.append("file", file);
+
+            try {
+                const res = await fetch("/api/words/import", {
+                    method: "POST",
+                    body: formData,
+                });
+
+                if (!res.ok) {
+                    const err = await res.json();
+                    throw new Error(err.detail || "Error al importar");
+                }
+
+                const data = await res.json();
+                const imported = data.imported ?? 0;
+                const skipped = data.skipped ?? 0;
+                showToast(`Importadas: ${imported}. Duplicadas: ${skipped}.`, "success");
+            } catch (err) {
+                showToast(err.message || "Error al importar", "error");
+            }
         });
     }
 
