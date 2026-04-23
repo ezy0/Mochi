@@ -16,6 +16,16 @@ document.addEventListener("DOMContentLoaded", () => {
     const settingsToggle = document.getElementById("settings-toggle");
     const settingsDropdown = document.getElementById("settings-dropdown");
     const toggleViewBtn = document.getElementById("toggle-view-btn");
+    
+    const mobileExportBtn  = document.getElementById("mobile-export-csv-btn");
+    const mobileImportBtn  = document.getElementById("mobile-import-csv-btn");
+    if (mobileExportBtn && exportBtn) {
+        mobileExportBtn.addEventListener("click", () => exportBtn.click());
+    }
+    if (mobileImportBtn && importBtn) {
+        mobileImportBtn.addEventListener("click", () => importBtn.click());
+    }
+
     const categorySelector = document.getElementById("category-selector");
     const editCategorySelector = document.getElementById("edit-category-selector");
     const filterChips = document.getElementById("filter-chips");

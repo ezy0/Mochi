@@ -20,6 +20,16 @@ document.addEventListener("DOMContentLoaded", () => {
     const settingsToggle   = document.getElementById("settings-toggle");
     const settingsDropdown = document.getElementById("settings-dropdown");
 
+    const mobileExportBtn  = document.getElementById("mobile-export-csv-btn");
+    const mobileImportBtn  = document.getElementById("mobile-import-csv-btn");
+    
+    if (mobileExportBtn && exportBtn) {
+        mobileExportBtn.addEventListener("click", () => exportBtn.click());
+    }
+    if (mobileImportBtn && importBtn) {
+        mobileImportBtn.addEventListener("click", () => importBtn.click());
+    }
+
     const correctCountEl   = document.getElementById("correct-count");
     const incorrectCountEl = document.getElementById("incorrect-count");
     const streakCountEl    = document.getElementById("streak-count");
@@ -31,8 +41,16 @@ document.addEventListener("DOMContentLoaded", () => {
     const categoryFilterToggle   = document.getElementById("category-filter-toggle");
     const categoryFilterDropdown = document.getElementById("category-filter-dropdown");
     const categoryFilterList     = document.getElementById("category-filter-list");
+    const mobileCategoryFilterList = document.getElementById("mobile-category-filter-list");
+    const filterLists = [categoryFilterList, mobileCategoryFilterList].filter(Boolean);
+
     const categoryClearBtn       = document.getElementById("category-clear-btn");
+    const mobileCategoryClearBtn = document.getElementById("mobile-category-clear-btn");
+    const clearBtns = [categoryClearBtn, mobileCategoryClearBtn].filter(Boolean);
+
     const categorySearchInput    = document.getElementById("category-search");
+    const mobileCategorySearchInput = document.getElementById("mobile-category-search");
+    const searchInputs = [categorySearchInput, mobileCategorySearchInput].filter(Boolean);
 
     // Mode handling
     const modeToggle = document.getElementById("mode-toggle");
@@ -187,7 +205,7 @@ document.addEventListener("DOMContentLoaded", () => {
 
     // --- Category filter logic ---
     async function loadCategories() {
-        if (!categoryFilterList) return;
+        if (!filterLists.length) return;
         try {
             const res = await fetch("/api/categories/");
             if (!res.ok) throw new Error();
@@ -199,8 +217,9 @@ document.addEventListener("DOMContentLoaded", () => {
     }
 
     function renderCategoryFilter(searchQuery = "") {
-        if (!categoryFilterList) return;
-        categoryFilterList.innerHTML = "";
+        if (!filterLists.length) return;
+        filterLists.forEach(list => list.innerHTML = "");
+
         const selected = getSelectedCategories();
         const query = searchQuery.trim().toLowerCase();
 
@@ -209,40 +228,51 @@ document.addEventListener("DOMContentLoaded", () => {
             : allCategories;
 
         filtered.forEach((cat) => {
-            const label = document.createElement("label");
-            label.className = "category-filter-item";
-            const checkbox = document.createElement("input");
-            checkbox.type = "checkbox";
-            checkbox.value = cat.name;
-            checkbox.checked = selected.includes(cat.name);
-            checkbox.addEventListener("change", () => {
-                let current = getSelectedCategories();
-                if (checkbox.checked) {
-                    if (!current.includes(cat.name)) current.push(cat.name);
-                } else {
-                    current = current.filter((c) => c !== cat.name);
-                }
-                setSelectedCategories(current);
-                loadWord();
+            filterLists.forEach(list => {
+                const label = document.createElement("label");
+                label.className = "category-filter-item";
+                const checkbox = document.createElement("input");
+                checkbox.type = "checkbox";
+                checkbox.value = cat.name;
+                checkbox.checked = selected.includes(cat.name);
+                checkbox.addEventListener("change", () => {
+                    let current = getSelectedCategories();
+                    if (checkbox.checked) {
+                        if (!current.includes(cat.name)) current.push(cat.name);
+                    } else {
+                        current = current.filter((c) => c !== cat.name);
+                    }
+                    setSelectedCategories(current);
+                    
+                    // Sync the checkboxes in all lists
+                    const allCheckboxes = document.querySelectorAll(`.category-filter-item input[value="${cat.name}"]`);
+                    allCheckboxes.forEach(cb => cb.checked = checkbox.checked);
+
+                    loadWord();
+                });
+                label.appendChild(checkbox);
+                label.appendChild(document.createTextNode(" " + cat.name));
+                list.appendChild(label);
             });
-            label.appendChild(checkbox);
-            label.appendChild(document.createTextNode(" " + cat.name));
-            categoryFilterList.appendChild(label);
         });
 
         if (filtered.length === 0) {
-            const emptyMsg = document.createElement("p");
-            emptyMsg.className = "category-loading";
-            emptyMsg.textContent = "Sin coincidencias";
-            categoryFilterList.appendChild(emptyMsg);
+            filterLists.forEach(list => {
+                const emptyMsg = document.createElement("p");
+                emptyMsg.className = "category-loading";
+                emptyMsg.textContent = "Sin coincidencias";
+                list.appendChild(emptyMsg);
+            });
         }
     }
 
-    if (categorySearchInput) {
-        categorySearchInput.addEventListener("input", (e) => {
+    searchInputs.forEach(input => {
+        input.addEventListener("input", (e) => {
+            // Sync all inputs
+            searchInputs.forEach(si => { if (si !== e.target) si.value = e.target.value; });
             renderCategoryFilter(e.target.value);
         });
-    }
+    });
 
     if (categoryFilterToggle && categoryFilterDropdown) {
         categoryFilterToggle.addEventListener("click", (e) => {
@@ -262,13 +292,14 @@ document.addEventListener("DOMContentLoaded", () => {
         });
     }
 
-    if (categoryClearBtn) {
-        categoryClearBtn.addEventListener("click", () => {
+    clearBtns.forEach(btn => {
+        btn.addEventListener("click", () => {
             setSelectedCategories([]);
+            searchInputs.forEach(si => si.value = "");
             renderCategoryFilter();
             loadWord();
         });
-    }
+    });
 
     // --- Load a random word ---
     async function loadWord() {

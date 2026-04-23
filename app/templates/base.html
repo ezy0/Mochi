@@ -25,6 +25,8 @@
                 <img src="/static/mochi.png" alt="Mochi" class="logo-icon">
                 <span class="logo-text">Mochi</span>
             </a>
+
+            <!-- Desktop nav links -->
             <div class="nav-links">
                 <a href="/" class="nav-link {% block nav_home %}{% endblock %}">Inicio</a>
                 <a href="/add" class="nav-link {% block nav_add %}{% endblock %}">Añadir</a>
@@ -41,6 +43,57 @@
                 </button>
                 {% block nav_filters %}{% endblock %}
                 {% block nav_settings %}{% endblock %}
+            </div>
+
+            <!-- Mobile: right-side actions (always visible) -->
+            <div class="nav-mobile-actions">
+                <button id="mobile-hiragana-help-btn" class="nav-help-btn" title="Tabla de hiragana" aria-label="Tabla de hiragana">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9.09 9a3 3 0 1 1 5.82 1c0 2-3 2-3 4"></path><line x1="12" y1="17" x2="12" y2="17"></line></svg>
+                </button>
+                <button id="hamburger-btn" class="hamburger-btn" aria-label="Abrir menú" aria-expanded="false">
+                    <span class="hamburger-line"></span>
+                    <span class="hamburger-line"></span>
+                    <span class="hamburger-line"></span>
+                </button>
+            </div>
+        </div>
+
+        <!-- Mobile menu drawer -->
+        <div class="mobile-menu" id="mobile-menu" aria-hidden="true">
+            <div class="mobile-menu-inner">
+                <!-- Navigation links -->
+                <div class="mobile-nav-section">
+                    <a href="/" class="mobile-nav-link {% block nav_home_mobile %}{% endblock %}">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" width="18" height="18"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"></path><polyline points="9 22 9 12 15 12 15 22"></polyline></svg>
+                        Inicio
+                    </a>
+                    <a href="/add" class="mobile-nav-link {% block nav_add_mobile %}{% endblock %}">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" width="18" height="18"><line x1="12" y1="5" x2="12" y2="19"></line><line x1="5" y1="12" x2="19" y2="12"></line></svg>
+                        Añadir
+                    </a>
+                </div>
+
+                <div class="mobile-menu-divider"></div>
+
+                <!-- Quick actions -->
+                <div class="mobile-actions-section">
+                    <!-- Theme toggle -->
+                    <button id="mobile-theme-toggle" class="mobile-action-btn" title="Cambiar tema">
+                        <svg class="sun-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" width="18" height="18"><circle cx="12" cy="12" r="5"></circle><line x1="12" y1="1" x2="12" y2="3"></line><line x1="12" y1="21" x2="12" y2="23"></line><line x1="4.22" y1="4.22" x2="5.64" y2="5.64"></line><line x1="18.36" y1="18.36" x2="19.78" y2="19.78"></line><line x1="1" y1="12" x2="3" y2="12"></line><line x1="21" y1="12" x2="23" y2="12"></line><line x1="4.22" y1="19.78" x2="5.64" y2="18.36"></line><line x1="18.36" y1="5.64" x2="19.78" y2="4.22"></line></svg>
+                        <svg class="moon-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" width="18" height="18"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"></path></svg>
+                        <span class="mobile-action-label mobile-theme-label">Tema oscuro</span>
+                    </button>
+                    <!-- Mode toggle -->
+                    <button id="mobile-mode-toggle" class="mobile-action-btn" title="Cambiar dirección de práctica">
+                        <span class="mobile-mode-icon">あ</span>
+                        <span class="mobile-action-label">Modo: <strong class="mobile-mode-text">あ → ES</strong></span>
+                    </button>
+                </div>
+
+                <!-- Page-specific items injected here -->
+                <div id="mobile-menu-extras" class="mobile-menu-extras">
+                    {% block mobile_nav_extras %}{% endblock %}
+                </div>
             </div>
         </div>
     </nav>
@@ -257,12 +310,114 @@
     </div>
 
     <script>
+        // ---- Theme toggle (desktop + mobile) ----
+        function applyTheme(theme) {
+            if (theme === 'dark') {
+                document.documentElement.setAttribute('data-theme', 'dark');
+            } else {
+                document.documentElement.removeAttribute('data-theme');
+            }
+            localStorage.setItem('mochi-theme', theme);
+            // Update mobile theme label
+            const mobileLabel = document.querySelector('.mobile-theme-label');
+            if (mobileLabel) mobileLabel.textContent = theme === 'dark' ? 'Tema claro' : 'Tema oscuro';
+        }
+
         document.getElementById('theme-toggle').addEventListener('click', () => {
             const currentTheme = document.documentElement.getAttribute('data-theme') || 'light';
-            const newTheme = currentTheme === 'light' ? 'dark' : 'light';
-            document.documentElement.setAttribute('data-theme', newTheme);
-            localStorage.setItem('mochi-theme', newTheme);
+            applyTheme(currentTheme === 'light' ? 'dark' : 'light');
         });
+
+        const mobileThemeToggle = document.getElementById('mobile-theme-toggle');
+        if (mobileThemeToggle) {
+            mobileThemeToggle.addEventListener('click', () => {
+                const currentTheme = document.documentElement.getAttribute('data-theme') || 'light';
+                applyTheme(currentTheme === 'light' ? 'dark' : 'light');
+            });
+        }
+
+        // Init mobile theme label
+        (function() {
+            const theme = localStorage.getItem('mochi-theme') || 'light';
+            const mobileLabel = document.querySelector('.mobile-theme-label');
+            if (mobileLabel) mobileLabel.textContent = theme === 'dark' ? 'Tema claro' : 'Tema oscuro';
+        })();
+
+        // ---- Hamburger / Mobile menu ----
+        const hamburgerBtn = document.getElementById('hamburger-btn');
+        const mobileMenu = document.getElementById('mobile-menu');
+
+        if (hamburgerBtn && mobileMenu) {
+            hamburgerBtn.addEventListener('click', () => {
+                const isOpen = mobileMenu.classList.contains('is-open');
+                if (isOpen) {
+                    closeMobileMenu();
+                } else {
+                    openMobileMenu();
+                }
+            });
+
+            // Close on outside click
+            document.addEventListener('click', (e) => {
+                if (mobileMenu.classList.contains('is-open') &&
+                    !mobileMenu.contains(e.target) &&
+                    !hamburgerBtn.contains(e.target)) {
+                    closeMobileMenu();
+                }
+            });
+        }
+
+        function openMobileMenu() {
+            mobileMenu.classList.add('is-open');
+            mobileMenu.setAttribute('aria-hidden', 'false');
+            hamburgerBtn.setAttribute('aria-expanded', 'true');
+            hamburgerBtn.classList.add('is-open');
+            document.body.classList.add('mobile-menu-open');
+        }
+
+        function closeMobileMenu() {
+            mobileMenu.classList.remove('is-open');
+            mobileMenu.setAttribute('aria-hidden', 'true');
+            hamburgerBtn.setAttribute('aria-expanded', 'false');
+            hamburgerBtn.classList.remove('is-open');
+            document.body.classList.remove('mobile-menu-open');
+        }
+
+        // ---- Mobile mode toggle (mirrors desktop #mode-toggle) ----
+        const mobileModeToggle = document.getElementById('mobile-mode-toggle');
+        const mobileModeText = document.querySelector('.mobile-mode-text');
+
+        if (mobileModeToggle) {
+            mobileModeToggle.addEventListener('click', () => {
+                // Trigger the desktop mode toggle if it exists
+                const desktopModeToggle = document.getElementById('mode-toggle');
+                if (desktopModeToggle) desktopModeToggle.click();
+                // Sync text after a tick
+                setTimeout(() => {
+                    const desktopText = document.querySelector('#mode-toggle .mode-text');
+                    if (desktopText && mobileModeText) {
+                        mobileModeText.textContent = desktopText.textContent;
+                    }
+                }, 50);
+            });
+        }
+
+        // Sync mobile mode text on load
+        (function syncModeText() {
+            const desktopText = document.querySelector('#mode-toggle .mode-text');
+            if (desktopText && mobileModeText) {
+                mobileModeText.textContent = desktopText.textContent;
+            }
+        })();
+
+        // ---- Mobile hiragana help btn ----
+        const mobileHiraganaHelpBtn = document.getElementById('mobile-hiragana-help-btn');
+        if (mobileHiraganaHelpBtn) {
+            mobileHiraganaHelpBtn.addEventListener('click', () => {
+                document.getElementById('hiragana-modal').style.display = 'flex';
+                initializeHiraganaTtsButtons();
+            });
+        }
 
         // Hiragana Modal
         const hiraganaModal = document.getElementById('hiragana-modal');

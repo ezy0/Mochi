@@ -2,6 +2,7 @@
 
 {% block title %}Añadir Palabra{% endblock %}
 {% block nav_add %}active{% endblock %}
+{% block nav_add_mobile %}active{% endblock %}
 
 {% block content %}
 <section class="page-section">
@@ -162,6 +163,21 @@
         <button type="button" class="btn btn-secondary btn-sm" id="export-csv-btn">Exportar CSV</button>
         <button type="button" class="btn btn-secondary btn-sm" id="import-csv-btn">Importar CSV</button>
         <input type="file" id="import-csv-file" accept=".csv" hidden>
+    </div>
+</div>
+{% endblock %}
+
+{% block mobile_nav_extras %}
+<div class="mobile-menu-divider"></div>
+<!-- Settings for mobile -->
+<div class="mobile-extras-section">
+    <div class="mobile-extras-title">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" width="16" height="16"><circle cx="12" cy="12" r="3.5"></circle><path d="M19.4 15a1.7 1.7 0 0 0 .34 1.87l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.7 1.7 0 0 0-1.87-.34 1.7 1.7 0 0 0-1 1.54V21a2 2 0 0 1-4 0v-.08a1.7 1.7 0 0 0-1-1.54 1.7 1.7 0 0 0-1.87.34l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06a1.7 1.7 0 0 0 .34-1.87 1.7 1.7 0 0 0-1.54-1H3a2 2 0 0 1 0-4h.08a1.7 1.7 0 0 0 1.54-1 1.7 1.7 0 0 0-.34-1.87l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06a1.7 1.7 0 0 0 1.87.34 1.7 1.7 0 0 0 1-1.54V3a2 2 0 0 1 4 0v.08a1.7 1.7 0 0 0 1 1.54 1.7 1.7 0 0 0 1.87-.34l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06a1.7 1.7 0 0 0-.34 1.87 1.7 1.7 0 0 0 1.54 1H21a2 2 0 0 1 0 4h-.08a1.7 1.7 0 0 0-1.54 1Z"></path></svg>
+        Ajustes
+    </div>
+    <div class="mobile-extras-actions">
+        <button type="button" class="btn btn-secondary btn-sm" id="mobile-export-csv-btn">Exportar CSV</button>
+        <button type="button" class="btn btn-secondary btn-sm" id="mobile-import-csv-btn">Importar CSV</button>
     </div>
 </div>
 {% endblock %}
