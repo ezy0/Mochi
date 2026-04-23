@@ -6,7 +6,7 @@ from fastapi.staticfiles import StaticFiles
 
 from app.config import APP_TITLE, APP_VERSION
 from app.database import init_db
-from app.routers import pages, words
+from app.routers import categories, pages, words
 
 
 @asynccontextmanager
@@ -23,4 +23,5 @@ app.mount("/static", StaticFiles(directory="app/static"), name="static")
 
 # Routers
 app.include_router(words.router)
+app.include_router(categories.router)
 app.include_router(pages.router)

@@ -4,16 +4,18 @@ from __future__ import annotations
 from sqlalchemy.orm import Session
 
 from app.models.word import Word
+from app.schemas.word import WordCreate
 from app.services.romaji import romaji_to_hiragana
+from app.services.word_service import WordService
 
-SEED_WORDS: list[dict[str, str]] = [
-    {"romaji": "sakura", "translation": "cerezo", "note": "Flor de cerezo"},
-    {"romaji": "konnichiwa", "translation": "hola", "note": "Saludo informal"},
-    {"romaji": "arigatou", "translation": "gracias", "note": "Forma informal"},
-    {"romaji": "neko", "translation": "gato", "note": None},
-    {"romaji": "inu", "translation": "perro", "note": None},
-    {"romaji": "mizu", "translation": "agua", "note": None},
-    {"romaji": "tabemasu", "translation": "comer", "note": "Forma educada"},
+SEED_WORDS: list[dict[str, str | list[str]]] = [
+    {"romaji": "sakura", "translation": "cerezo", "note": "Flor de cerezo", "categories": ["naturaleza"]},
+    {"romaji": "konnichiwa", "translation": "hola", "note": "Saludo informal", "categories": ["saludos"]},
+    {"romaji": "arigatou", "translation": "gracias", "note": "Forma informal", "categories": ["cortesía"]},
+    {"romaji": "neko", "translation": "gato", "note": None, "categories": ["animales"]},
+    {"romaji": "inu", "translation": "perro", "note": None, "categories": ["animales"]},
+    {"romaji": "mizu", "translation": "agua", "note": None, "categories": ["naturaleza", "comida"]},
+    {"romaji": "tabemasu", "translation": "comer", "note": "Forma educada", "categories": ["verbos", "comida"]},
 ]
 
 
@@ -23,18 +25,13 @@ def seed_words(db: Session) -> int:
     if exists:
         return 0
 
-    words: list[Word] = []
     for item in SEED_WORDS:
-        romaji = item["romaji"].strip().lower()
-        words.append(
-            Word(
-                romaji=romaji,
-                hiragana=romaji_to_hiragana(romaji),
-                translation=item["translation"].strip(),
-                note=item["note"].strip() if item["note"] else None,
-            )
+        data = WordCreate(
+            romaji=item["romaji"],
+            translation=item["translation"],
+            note=item.get("note"),
+            categories=item.get("categories", []),
         )
+        WordService.create(db, data)
 
-    db.add_all(words)
-    db.commit()
-    return len(words)
+    return len(SEED_WORDS)

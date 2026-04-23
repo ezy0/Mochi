@@ -2,9 +2,10 @@
 from datetime import datetime, timezone
 
 from sqlalchemy import DateTime, Integer, String, Text
-from sqlalchemy.orm import Mapped, mapped_column
+from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from app.database import Base
+from app.models.category import word_categories
 
 
 class Word(Base):
@@ -21,6 +22,12 @@ class Word(Base):
         DateTime,
         default=lambda: datetime.now(timezone.utc),
         nullable=False,
+    )
+
+    categories: Mapped[list["Category"]] = relationship(
+        "Category",
+        secondary=word_categories,
+        back_populates="words",
     )
 
     def __repr__(self) -> str:

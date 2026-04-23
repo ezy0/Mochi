@@ -27,6 +27,13 @@ document.addEventListener("DOMContentLoaded", () => {
     const historyList      = document.getElementById("history-list");
     const historyEmpty     = document.getElementById("history-empty");
 
+    // Category filter elements
+    const categoryFilterToggle   = document.getElementById("category-filter-toggle");
+    const categoryFilterDropdown = document.getElementById("category-filter-dropdown");
+    const categoryFilterList     = document.getElementById("category-filter-list");
+    const categoryClearBtn       = document.getElementById("category-clear-btn");
+    const categorySearchInput    = document.getElementById("category-search");
+
     // Mode handling
     const modeToggle = document.getElementById("mode-toggle");
     
@@ -35,9 +42,22 @@ document.addEventListener("DOMContentLoaded", () => {
 
     let currentWord = null;
     let stats = { correct: 0, incorrect: 0, streak: 0 };
+    let allCategories = [];
 
     function getMode() {
         return localStorage.getItem("mochi-practice-mode") || "jp-es";
+    }
+
+    function getSelectedCategories() {
+        try {
+            return JSON.parse(localStorage.getItem("mochi-selected-categories") || "[]");
+        } catch {
+            return [];
+        }
+    }
+
+    function setSelectedCategories(cats) {
+        localStorage.setItem("mochi-selected-categories", JSON.stringify(cats));
     }
 
     function updateModeButton() {
@@ -157,16 +177,109 @@ document.addEventListener("DOMContentLoaded", () => {
                 const imported = data.imported ?? 0;
                 const skipped = data.skipped ?? 0;
                 showToast(`Importadas: ${imported}. Duplicadas: ${skipped}.`, "success");
+                // Refresh categories after import
+                await loadCategories();
             } catch (err) {
                 showToast(err.message || "Error al importar", "error");
             }
         });
     }
 
+    // --- Category filter logic ---
+    async function loadCategories() {
+        if (!categoryFilterList) return;
+        try {
+            const res = await fetch("/api/categories/");
+            if (!res.ok) throw new Error();
+            allCategories = await res.json();
+            renderCategoryFilter();
+        } catch {
+            // silently fail
+        }
+    }
+
+    function renderCategoryFilter(searchQuery = "") {
+        if (!categoryFilterList) return;
+        categoryFilterList.innerHTML = "";
+        const selected = getSelectedCategories();
+        const query = searchQuery.trim().toLowerCase();
+
+        const filtered = query
+            ? allCategories.filter((cat) => cat.name.toLowerCase().includes(query))
+            : allCategories;
+
+        filtered.forEach((cat) => {
+            const label = document.createElement("label");
+            label.className = "category-filter-item";
+            const checkbox = document.createElement("input");
+            checkbox.type = "checkbox";
+            checkbox.value = cat.name;
+            checkbox.checked = selected.includes(cat.name);
+            checkbox.addEventListener("change", () => {
+                let current = getSelectedCategories();
+                if (checkbox.checked) {
+                    if (!current.includes(cat.name)) current.push(cat.name);
+                } else {
+                    current = current.filter((c) => c !== cat.name);
+                }
+                setSelectedCategories(current);
+                loadWord();
+            });
+            label.appendChild(checkbox);
+            label.appendChild(document.createTextNode(" " + cat.name));
+            categoryFilterList.appendChild(label);
+        });
+
+        if (filtered.length === 0) {
+            const emptyMsg = document.createElement("p");
+            emptyMsg.className = "category-loading";
+            emptyMsg.textContent = "Sin coincidencias";
+            categoryFilterList.appendChild(emptyMsg);
+        }
+    }
+
+    if (categorySearchInput) {
+        categorySearchInput.addEventListener("input", (e) => {
+            renderCategoryFilter(e.target.value);
+        });
+    }
+
+    if (categoryFilterToggle && categoryFilterDropdown) {
+        categoryFilterToggle.addEventListener("click", (e) => {
+            e.stopPropagation();
+            categoryFilterDropdown.classList.toggle("is-open");
+            categoryFilterDropdown.setAttribute(
+                "aria-hidden",
+                categoryFilterDropdown.classList.contains("is-open") ? "false" : "true"
+            );
+        });
+
+        document.addEventListener("click", (e) => {
+            if (!categoryFilterDropdown.classList.contains("is-open")) return;
+            if (categoryFilterDropdown.contains(e.target) || categoryFilterToggle.contains(e.target)) return;
+            categoryFilterDropdown.classList.remove("is-open");
+            categoryFilterDropdown.setAttribute("aria-hidden", "true");
+        });
+    }
+
+    if (categoryClearBtn) {
+        categoryClearBtn.addEventListener("click", () => {
+            setSelectedCategories([]);
+            renderCategoryFilter();
+            loadWord();
+        });
+    }
+
     // --- Load a random word ---
     async function loadWord() {
         try {
-            const res = await fetch("/api/words/random");
+            const selected = getSelectedCategories();
+            let url = "/api/words/random";
+            if (selected.length > 0) {
+                const params = selected.map((c) => `category=${encodeURIComponent(c)}`).join("&");
+                url += "?" + params;
+            }
+            const res = await fetch(url);
             if (!res.ok) throw new Error();
             currentWord = await res.json();
             
@@ -316,5 +429,6 @@ document.addEventListener("DOMContentLoaded", () => {
         return div.innerHTML;
     }
 
+    loadCategories();
     loadWord();
 });

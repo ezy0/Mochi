@@ -85,6 +85,24 @@
 <script src="/static/js/home.js"></script>
 {% endblock %}
 
+{% block nav_filters %}
+<div class="settings-menu nav-filters">
+    <button type="button" class="settings-toggle" id="category-filter-toggle" aria-label="Filtrar categorías" title="Filtrar categorías">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width:20px;height:20px;">
+            <polygon points="22 3 2 3 10 12.46 10 19 14 21 14 12.46 22 3"></polygon>
+        </svg>
+    </button>
+    <div class="settings-dropdown" id="category-filter-dropdown" aria-hidden="true">
+        <div class="category-filter-header">
+            <span>Categorías</span>
+            <button type="button" class="btn btn-secondary btn-xs" id="category-clear-btn">Todas</button>
+        </div>
+        <input type="text" id="category-search" class="form-input category-search-input" placeholder="Buscar categoría..." autocomplete="off">
+        <div class="category-filter-list" id="category-filter-list"></div>
+    </div>
+</div>
+{% endblock %}
+
 {% block nav_settings %}
 <div class="settings-menu nav-settings">
     <button type="button" class="settings-toggle" id="settings-toggle" aria-label="Ajustes">

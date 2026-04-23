@@ -16,15 +16,84 @@ document.addEventListener("DOMContentLoaded", () => {
     const settingsToggle = document.getElementById("settings-toggle");
     const settingsDropdown = document.getElementById("settings-dropdown");
     const toggleViewBtn = document.getElementById("toggle-view-btn");
+    const categorySelector = document.getElementById("category-selector");
+    const editCategorySelector = document.getElementById("edit-category-selector");
+    const filterChips = document.getElementById("filter-chips");
 
     let allWords = []; // To check for duplicates globally
     let showAllWords = false;
+    let allCategories = [];
+    let selectedFilterCategories = new Set();
 
     // --- Real-time hiragana preview ---
     romajiInput.addEventListener("input", () => {
         const value = romajiInput.value.trim();
         previewText.textContent = value ? romajiToHiragana(value) : "—";
     });
+
+    // --- Load categories ---
+    async function loadCategories() {
+        try {
+            const res = await fetch("/api/categories/");
+            if (!res.ok) throw new Error();
+            allCategories = await res.json();
+            renderCategorySelector(categorySelector);
+            renderCategorySelector(editCategorySelector);
+            populateCategoryFilter();
+        } catch {
+            if (categorySelector) categorySelector.innerHTML = "<p class='category-loading'>Error cargando categorías</p>";
+        }
+    }
+
+    function populateCategoryFilter() {
+        if (!filterChips) return;
+        filterChips.innerHTML = "";
+        allCategories.forEach((cat) => {
+            const label = document.createElement("label");
+            label.className = "filter-chip";
+            const checkbox = document.createElement("input");
+            checkbox.type = "checkbox";
+            checkbox.value = cat.name;
+            checkbox.checked = selectedFilterCategories.has(cat.name);
+            checkbox.addEventListener("change", () => {
+                if (checkbox.checked) {
+                    selectedFilterCategories.add(cat.name);
+                } else {
+                    selectedFilterCategories.delete(cat.name);
+                }
+                refreshWordList();
+            });
+            label.appendChild(checkbox);
+            label.appendChild(document.createTextNode(" " + cat.name));
+            filterChips.appendChild(label);
+        });
+    }
+
+    function renderCategorySelector(container, selectedNames = []) {
+        if (!container) return;
+        container.innerHTML = "";
+        if (allCategories.length === 0) {
+            container.innerHTML = "<p class='category-loading'>No hay categorías</p>";
+            return;
+        }
+        allCategories.forEach((cat) => {
+            const label = document.createElement("label");
+            label.className = "category-checkbox";
+            const checkbox = document.createElement("input");
+            checkbox.type = "checkbox";
+            checkbox.value = cat.name;
+            checkbox.checked = selectedNames.includes(cat.name);
+            label.appendChild(checkbox);
+            label.appendChild(document.createTextNode(" " + cat.name));
+            container.appendChild(label);
+        });
+    }
+
+    function getSelectedCategories(container) {
+        if (!container) return [];
+        const checked = container.querySelectorAll('input[type="checkbox"]:checked');
+        return Array.from(checked).map((cb) => cb.value);
+    }
 
     // --- Confirmation Modal Logic ---
     const confirmModal = document.getElementById("confirm-modal");
@@ -58,6 +127,7 @@ document.addEventListener("DOMContentLoaded", () => {
         const romaji      = document.getElementById("romaji").value.trim();
         const translation = document.getElementById("translation").value.trim();
         const note        = document.getElementById("note").value.trim() || null;
+        const categories  = getSelectedCategories(categorySelector);
 
         if (!romaji || !translation) return;
 
@@ -72,7 +142,7 @@ document.addEventListener("DOMContentLoaded", () => {
                 const response = await fetch("/api/words/", {
                     method: "POST",
                     headers: { "Content-Type": "application/json" },
-                    body: JSON.stringify({ romaji, translation, note }),
+                    body: JSON.stringify({ romaji, translation, note, categories }),
                 });
 
                 if (!response.ok) {
@@ -84,6 +154,7 @@ document.addEventListener("DOMContentLoaded", () => {
                 showToast(`「${word.hiragana}」guardada correctamente`, "success");
                 form.reset();
                 previewText.textContent = "—";
+                renderCategorySelector(categorySelector);
                 
                 allWords.push(word);
                 addWordToList(word);
@@ -104,9 +175,9 @@ document.addEventListener("DOMContentLoaded", () => {
 
     // --- Search logic ---
     searchInput.addEventListener("input", () => {
-        const query = searchInput.value.trim().toLowerCase();
-        refreshWordList(query);
+        refreshWordList();
     });
+
 
     // --- Settings dropdown ---
     settingsToggle.addEventListener("click", (e) => {
@@ -183,6 +254,7 @@ document.addEventListener("DOMContentLoaded", () => {
             showToast(`Importadas: ${imported}. Duplicadas: ${skipped}.`, "success");
 
             await loadWords();
+            await loadCategories();
         } catch (err) {
             showToast(err.message || "Error al importar", "error");
         }
@@ -204,6 +276,7 @@ document.addEventListener("DOMContentLoaded", () => {
         editRomaji.value = word.romaji;
         editTrans.value = word.translation;
         editNote.value = word.note || "";
+        renderCategorySelector(editCategorySelector, word.categories || []);
         editModal.classList.add("show");
     }
 
@@ -223,7 +296,8 @@ document.addEventListener("DOMContentLoaded", () => {
         const data = {
             romaji: editRomaji.value.trim(),
             translation: editTrans.value.trim(),
-            note: editNote.value.trim() || null
+            note: editNote.value.trim() || null,
+            categories: getSelectedCategories(editCategorySelector),
         };
 
         try {
@@ -257,6 +331,9 @@ document.addEventListener("DOMContentLoaded", () => {
         const item = document.createElement("div");
         item.className = "word-item";
         item.dataset.id = word.id;
+        const categoriesHtml = word.categories && word.categories.length
+            ? `<div class="word-categories">${word.categories.map(c => `<span class="word-category">${escapeHtml(c)}</span>`).join('')}</div>`
+            : '';
         item.innerHTML = `
             <span class="word-hiragana">${escapeHtml(word.hiragana)}</span>
             <div class="word-details">
@@ -264,6 +341,7 @@ document.addEventListener("DOMContentLoaded", () => {
                 <div class="word-translation">
                     ${escapeHtml(word.translation)}
                     ${word.note ? `<div class="word-note">${escapeHtml(word.note)}</div>` : ''}
+                    ${categoriesHtml}
                 </div>
             </div>
             <div class="word-actions">
@@ -302,18 +380,34 @@ document.addEventListener("DOMContentLoaded", () => {
         refreshWordList();
     }
 
-    function refreshWordList(query = "") {
+    function refreshWordList() {
         wordList.innerHTML = "";
         const sorted = [...allWords].sort((a, b) => b.id - a.id);
 
+        const query = searchInput.value.trim().toLowerCase();
+        const hasCategoryFilters = selectedFilterCategories.size > 0;
+
         let list = sorted;
+
+        // Filter by search query
         if (query) {
-            list = sorted.filter((word) => {
-                const haystack = `${word.hiragana} ${word.romaji} ${word.translation} ${word.note || ""}`.toLowerCase();
+            list = list.filter((word) => {
+                const haystack = `${word.hiragana} ${word.romaji} ${word.translation} ${word.note || ""} ${word.categories?.join(" ") || ""}`.toLowerCase();
                 return haystack.includes(query);
             });
-        } else if (!showAllWords) {
-            list = sorted.slice(0, 5);
+        }
+
+        // Filter by categories (OR logic: word must belong to at least one selected category)
+        if (hasCategoryFilters) {
+            list = list.filter((word) => {
+                if (!word.categories || word.categories.length === 0) return false;
+                return word.categories.some((c) => selectedFilterCategories.has(c));
+            });
+        }
+
+        // Apply "recent" limit only when no filters are active
+        if (!query && !hasCategoryFilters && !showAllWords) {
+            list = list.slice(0, 5);
         }
 
         list.forEach((word) => {
@@ -341,12 +435,12 @@ document.addEventListener("DOMContentLoaded", () => {
         try {
             const response = await fetch("/api/words/?limit=1000");
             allWords = await response.json();
-            const query = searchInput.value.trim().toLowerCase();
-            refreshWordList(query);
+            refreshWordList();
         } catch {
             // Silently fail
         }
     }
 
+    loadCategories();
     loadWords();
 });

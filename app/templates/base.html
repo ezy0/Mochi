@@ -39,6 +39,7 @@
                 <button id="hiragana-help-btn" class="nav-help-btn" title="Tabla de hiragana">
                     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9.09 9a3 3 0 1 1 5.82 1c0 2-3 2-3 4"></path><line x1="12" y1="17" x2="12" y2="17"></line></svg>
                 </button>
+                {% block nav_filters %}{% endblock %}
                 {% block nav_settings %}{% endblock %}
             </div>
         </div>
@@ -55,7 +56,7 @@
     <div id="hiragana-modal" class="hiragana-modal">
         <div class="hiragana-chart">
             <div class="modal-header">
-                <h2>Hiragana Básico</h2>
+                <h2>Hiragana</h2>
                 <button id="hiragana-modal-close" class="modal-close">×</button>
             </div>
             <div class="modal-body">
@@ -325,6 +326,6 @@
             }
         });
     </script>
-    <div class="app-version">Mochi v0.2</div>
+    <div class="app-version">Mochi v0.3</div>
 </body>
 </html>

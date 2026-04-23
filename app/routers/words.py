@@ -23,15 +23,26 @@ def create_word(data: WordCreate, db: Session = Depends(get_db)):
 
 
 @router.get("/", response_model=list[WordOut])
-def list_words(skip: int = 0, limit: int = 100, db: Session = Depends(get_db)):
-    """List all words with optional pagination."""
-    return WordService.get_all(db, skip=skip, limit=limit)
+def list_words(
+    skip: int = 0,
+    limit: int = 100,
+    category: list[str] = Query(default=None),
+    db: Session = Depends(get_db),
+):
+    """List all words with optional pagination and category filter."""
+    # For simplicity, if multiple categories are provided, use the first one for listing
+    # (advanced filtering can be added later if needed)
+    cat = category[0] if category else None
+    return WordService.get_all(db, skip=skip, limit=limit, category=cat)
 
 
 @router.get("/random", response_model=WordOut)
-def random_word(db: Session = Depends(get_db)):
-    """Get a random word for practice."""
-    word = WordService.get_random(db)
+def random_word(
+    category: list[str] = Query(default=None),
+    db: Session = Depends(get_db),
+):
+    """Get a random word for practice, optionally filtered by categories."""
+    word = WordService.get_random(db, categories=category)
     if word is None:
         raise HTTPException(status_code=404, detail="No hay palabras disponibles. Añade algunas primero.")
     return word
@@ -82,13 +93,15 @@ def export_words(db: Session = Depends(get_db)):
 
     output = io.StringIO()
     writer = csv.writer(output)
-    writer.writerow(["romaji", "translation", "note"])
+    writer.writerow(["romaji", "translation", "note", "categories"])
 
     for word in words:
+        categories_str = ",".join(c.name for c in word.categories) if word.categories else ""
         writer.writerow([
             word.romaji,
             word.translation,
             word.note or "",
+            categories_str,
         ])
 
     output.seek(0)
@@ -136,7 +149,10 @@ async def import_words(file: UploadFile, db: Session = Depends(get_db)):
             skipped += 1
             continue
 
-        WordService.create(db, WordCreate(romaji=romaji, translation=translation, note=note))
+        categories_raw = (row.get("categories") or "").strip()
+        categories = [c.strip() for c in categories_raw.split(",") if c.strip()] if categories_raw else []
+
+        WordService.create(db, WordCreate(romaji=romaji, translation=translation, note=note, categories=categories))
         existing.add(hiragana)
         created += 1
 
