@@ -1,4 +1,4 @@
-# 🍡 Mochi — Tu Compañero para Aprender Japonés
+# Mochi 
 
 **Mochi** es una aplicación web minimalista y elegante diseñada para ayudarte a memorizar vocabulario japonés de forma efectiva. Utiliza un sistema de flashcards interactivas donde puedes practicar tanto la lectura como la traducción, todo con un diseño cálido (Warm Linen) y una experiencia de usuario fluida.
 

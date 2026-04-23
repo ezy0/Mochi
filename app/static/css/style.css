@@ -1163,6 +1163,10 @@ body.mobile-menu-open .mobile-menu {
     display: flex;
     align-items: center;
     justify-content: center;
+    padding: var(--space-4);
+    overflow-y: auto;
+    overscroll-behavior: contain;
+    -webkit-overflow-scrolling: touch;
     opacity: 0;
     visibility: hidden;
     pointer-events: none;
@@ -1180,17 +1184,21 @@ body.mobile-menu-open .mobile-menu {
 }
 
 .modal-content {
-    width: 90%;
-    max-width: 480px;
+    width: min(92vw, 560px);
+    max-width: 560px;
+    max-height: min(88vh, 760px);
+    max-height: min(88dvh, 760px);
     background: var(--color-bg);
     border: 1px solid var(--color-border);
     border-radius: var(--radius-xl);
-    padding: var(--space-8);
+    padding: var(--space-6);
     box-shadow: 0 20px 50px rgba(0,0,0,0.15);
     transform: translateY(30px);
     transition: all var(--transition-base);
     position: relative;
     overflow: hidden;
+    display: flex;
+    flex-direction: column;
 }
 
 [data-theme="dark"] .modal-content {
@@ -1200,6 +1208,11 @@ body.mobile-menu-open .mobile-menu {
 
 .form-textarea {
     resize: none;
+}
+
+.modal-form {
+    overflow-y: auto;
+    padding-right: var(--space-1);
 }
 
 .modal-overlay.show .modal-content {
@@ -1230,7 +1243,7 @@ body.mobile-menu-open .mobile-menu {
 .modal-actions {
     display: flex;
     gap: var(--space-3);
-    margin-top: var(--space-8);
+    margin-top: var(--space-6);
 }
 
 .modal-actions .btn {
@@ -1480,6 +1493,29 @@ body.mobile-menu-open .mobile-menu {
     .btn {
         padding: var(--space-2) var(--space-4);
         font-size: var(--text-xs);
+    }
+
+    .modal-overlay {
+        align-items: flex-start;
+        padding: var(--space-3);
+    }
+
+    .modal-content {
+        width: 100%;
+        max-width: 520px;
+        max-height: calc(100dvh - var(--space-6));
+        padding: var(--space-4);
+        margin-top: var(--space-3);
+    }
+
+    .modal-form {
+        overflow-y: auto;
+        -webkit-overflow-scrolling: touch;
+    }
+
+    .modal-actions {
+        flex-direction: column;
+        margin-top: var(--space-4);
     }
 
     .tts-btn {
