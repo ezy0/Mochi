@@ -17,6 +17,13 @@ def home(request: Request, db: Session = Depends(get_db)):
     return templates.TemplateResponse("index.html", {"request": request, "word_count": count})
 
 
+@router.get("/katakana")
+def katakana_home(request: Request, db: Session = Depends(get_db)):
+    """Katakana practice page."""
+    count = WordService.count(db)
+    return templates.TemplateResponse("katakana.html", {"request": request, "word_count": count})
+
+
 @router.get("/add")
 def add_word_page(request: Request):
     """Form to add a new word."""

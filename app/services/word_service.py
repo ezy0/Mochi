@@ -6,7 +6,7 @@ from app.models.category import Category
 from app.models.word import Word
 from app.schemas.word import WordCreate, WordUpdate
 from app.services.category_service import CategoryService
-from app.services.romaji import romaji_to_hiragana
+from app.services.romaji import detect_kana_script, romaji_to_hiragana, romaji_to_katakana
 
 
 class WordService:
@@ -15,9 +15,11 @@ class WordService:
     @staticmethod
     def create(db: Session, data: WordCreate) -> Word:
         """Add a new word, auto-generating hiragana from romaji."""
+        script = data.script if data.script in {"hiragana", "katakana"} else "hiragana"
+        kana = romaji_to_katakana(data.romaji) if script == "katakana" else romaji_to_hiragana(data.romaji)
         word = Word(
             romaji=data.romaji.strip().lower(),
-            hiragana=romaji_to_hiragana(data.romaji),
+            hiragana=kana,
             translation=data.translation.strip(),
             note=data.note.strip() if data.note else None,
         )
@@ -68,7 +70,12 @@ class WordService:
 
         if "romaji" in update_data:
             word.romaji = update_data["romaji"].strip().lower()
-            word.hiragana = romaji_to_hiragana(word.romaji)
+            script = update_data.get("script") or detect_kana_script(word.hiragana)
+            word.hiragana = romaji_to_katakana(word.romaji) if script == "katakana" else romaji_to_hiragana(word.romaji)
+
+        elif "script" in update_data and update_data["script"] in {"hiragana", "katakana"}:
+            script = update_data["script"]
+            word.hiragana = romaji_to_katakana(word.romaji) if script == "katakana" else romaji_to_hiragana(word.romaji)
 
         if "translation" in update_data:
             word.translation = update_data["translation"].strip()

@@ -6,6 +6,7 @@ document.addEventListener("DOMContentLoaded", () => {
     const form        = document.getElementById("add-word-form");
     const romajiInput = document.getElementById("romaji");
     const previewText = document.getElementById("preview-text");
+    const previewLabel = document.getElementById("preview-label");
     const submitBtn   = document.getElementById("submit-btn");
     const toast       = document.getElementById("toast");
     const wordList    = document.getElementById("word-list");
@@ -16,6 +17,12 @@ document.addEventListener("DOMContentLoaded", () => {
     const settingsToggle = document.getElementById("settings-toggle");
     const settingsDropdown = document.getElementById("settings-dropdown");
     const toggleViewBtn = document.getElementById("toggle-view-btn");
+    const listScriptToggleBtn = document.getElementById("list-script-toggle-btn");
+    const listCategoryFilterToggle = document.getElementById("list-category-filter-toggle");
+    const listCategoryFilterDropdown = document.getElementById("list-category-filter-dropdown");
+    const listCategorySearchInput = document.getElementById("list-category-search");
+    const listCategoryFilterList = document.getElementById("list-category-filter-list");
+    const listCategoryClearBtn = document.getElementById("list-category-clear-btn");
     
     const mobileExportBtn  = document.getElementById("mobile-export-csv-btn");
     const mobileImportBtn  = document.getElementById("mobile-import-csv-btn");
@@ -28,18 +35,74 @@ document.addEventListener("DOMContentLoaded", () => {
 
     const categorySelector = document.getElementById("category-selector");
     const editCategorySelector = document.getElementById("edit-category-selector");
-    const filterChips = document.getElementById("filter-chips");
+    const scriptHiraganaBtn = document.getElementById("script-hiragana-btn");
+    const scriptKatakanaBtn = document.getElementById("script-katakana-btn");
 
     let allWords = []; // To check for duplicates globally
     let showAllWords = false;
     let allCategories = [];
     let selectedFilterCategories = new Set();
 
+    function getListKanaScript() {
+        const script = localStorage.getItem("mochi-list-kana-script");
+        return script === "katakana" ? "katakana" : "hiragana";
+    }
+
+    function renderListKanaToggle() {
+        if (!listScriptToggleBtn) return;
+        const script = getListKanaScript();
+        listScriptToggleBtn.textContent = script === "katakana" ? "Katakana" : "Hiragana";
+    }
+
+    function toggleListKanaScript() {
+        const current = getListKanaScript();
+        const next = current === "hiragana" ? "katakana" : "hiragana";
+        localStorage.setItem("mochi-list-kana-script", next);
+        renderListKanaToggle();
+        refreshWordList();
+    }
+
+    function getKanaScript() {
+        const script = localStorage.getItem("mochi-add-kana-script");
+        return script === "katakana" ? "katakana" : "hiragana";
+    }
+
+    function toSelectedKana(text) {
+        return toKanaScript(text || "", getListKanaScript());
+    }
+
+    function renderKanaScriptSelector() {
+        const script = getKanaScript();
+        if (scriptHiraganaBtn) scriptHiraganaBtn.classList.toggle("active", script === "hiragana");
+        if (scriptKatakanaBtn) scriptKatakanaBtn.classList.toggle("active", script === "katakana");
+        if (previewLabel) previewLabel.textContent = script === "katakana" ? "Katakana:" : "Hiragana:";
+    }
+
+    function setKanaScript(script) {
+        const value = script === "katakana" ? "katakana" : "hiragana";
+        localStorage.setItem("mochi-add-kana-script", value);
+        renderKanaScriptSelector();
+        const valueRomaji = romajiInput.value.trim();
+        previewText.textContent = valueRomaji
+            ? (value === "katakana" ? romajiToKatakana(valueRomaji) : romajiToHiragana(valueRomaji))
+            : "—";
+        refreshWordList();
+    }
+
     // --- Real-time hiragana preview ---
     romajiInput.addEventListener("input", () => {
         const value = romajiInput.value.trim();
-        previewText.textContent = value ? romajiToHiragana(value) : "—";
+        previewText.textContent = value
+            ? (getKanaScript() === "katakana" ? romajiToKatakana(value) : romajiToHiragana(value))
+            : "—";
     });
+
+    if (scriptHiraganaBtn) {
+        scriptHiraganaBtn.addEventListener("click", () => setKanaScript("hiragana"));
+    }
+    if (scriptKatakanaBtn) {
+        scriptKatakanaBtn.addEventListener("click", () => setKanaScript("katakana"));
+    }
 
     // --- Load categories ---
     async function loadCategories() {
@@ -49,18 +112,32 @@ document.addEventListener("DOMContentLoaded", () => {
             allCategories = await res.json();
             renderCategorySelector(categorySelector);
             renderCategorySelector(editCategorySelector);
-            populateCategoryFilter();
+            renderListCategoryFilter();
         } catch {
             if (categorySelector) categorySelector.innerHTML = "<p class='category-loading'>Error cargando categorías</p>";
         }
     }
 
-    function populateCategoryFilter() {
-        if (!filterChips) return;
-        filterChips.innerHTML = "";
-        allCategories.forEach((cat) => {
+    function renderListCategoryFilter(searchQuery = "") {
+        if (!listCategoryFilterList) return;
+        listCategoryFilterList.innerHTML = "";
+
+        const query = searchQuery.trim().toLowerCase();
+        const filtered = query
+            ? allCategories.filter((cat) => cat.name.toLowerCase().includes(query))
+            : allCategories;
+
+        if (filtered.length === 0) {
+            const empty = document.createElement("p");
+            empty.className = "category-loading";
+            empty.textContent = allCategories.length === 0 ? "Sin categorías" : "Sin coincidencias";
+            listCategoryFilterList.appendChild(empty);
+            return;
+        }
+
+        filtered.forEach((cat) => {
             const label = document.createElement("label");
-            label.className = "filter-chip";
+            label.className = "category-filter-item";
             const checkbox = document.createElement("input");
             checkbox.type = "checkbox";
             checkbox.value = cat.name;
@@ -75,7 +152,7 @@ document.addEventListener("DOMContentLoaded", () => {
             });
             label.appendChild(checkbox);
             label.appendChild(document.createTextNode(" " + cat.name));
-            filterChips.appendChild(label);
+            listCategoryFilterList.appendChild(label);
         });
     }
 
@@ -141,8 +218,9 @@ document.addEventListener("DOMContentLoaded", () => {
 
         if (!romaji || !translation) return;
 
-        const hiraganaCheck = romajiToHiragana(romaji);
-        const exists = allWords.some(w => w.hiragana === hiraganaCheck);
+        const kanaScript = getKanaScript();
+        const kanaCheck = kanaScript === "katakana" ? romajiToKatakana(romaji) : romajiToHiragana(romaji);
+        const exists = allWords.some((w) => toKanaScript(w.hiragana, kanaScript) === kanaCheck);
 
         const performSave = async () => {
             submitBtn.disabled = true;
@@ -152,7 +230,7 @@ document.addEventListener("DOMContentLoaded", () => {
                 const response = await fetch("/api/words/", {
                     method: "POST",
                     headers: { "Content-Type": "application/json" },
-                    body: JSON.stringify({ romaji, translation, note, categories }),
+                    body: JSON.stringify({ romaji, translation, note, categories, script: kanaScript }),
                 });
 
                 if (!response.ok) {
@@ -177,7 +255,7 @@ document.addEventListener("DOMContentLoaded", () => {
         };
 
         if (exists) {
-            showConfirm(`La palabra 「${hiraganaCheck}」ya existe en tu colección. ¿Quieres añadirla de nuevo?`, performSave);
+            showConfirm(`La palabra 「${kanaCheck}」ya existe en tu colección. ¿Quieres añadirla de nuevo?`, performSave);
         } else {
             performSave();
         }
@@ -187,6 +265,36 @@ document.addEventListener("DOMContentLoaded", () => {
     searchInput.addEventListener("input", () => {
         refreshWordList();
     });
+
+    if (listScriptToggleBtn) {
+        listScriptToggleBtn.addEventListener("click", toggleListKanaScript);
+    }
+
+    if (listCategoryFilterToggle && listCategoryFilterDropdown) {
+        listCategoryFilterToggle.addEventListener("click", (e) => {
+            e.stopPropagation();
+            listCategoryFilterDropdown.classList.toggle("is-open");
+            listCategoryFilterDropdown.setAttribute(
+                "aria-hidden",
+                listCategoryFilterDropdown.classList.contains("is-open") ? "false" : "true"
+            );
+        });
+    }
+
+    if (listCategoryClearBtn) {
+        listCategoryClearBtn.addEventListener("click", () => {
+            selectedFilterCategories = new Set();
+            if (listCategorySearchInput) listCategorySearchInput.value = "";
+            renderListCategoryFilter("");
+            refreshWordList();
+        });
+    }
+
+    if (listCategorySearchInput) {
+        listCategorySearchInput.addEventListener("input", (e) => {
+            renderListCategoryFilter(e.target.value);
+        });
+    }
 
 
     // --- Settings dropdown ---
@@ -204,6 +312,14 @@ document.addEventListener("DOMContentLoaded", () => {
         if (settingsDropdown.contains(e.target) || settingsToggle.contains(e.target)) return;
         settingsDropdown.classList.remove("is-open");
         settingsDropdown.setAttribute("aria-hidden", "true");
+    });
+
+    document.addEventListener("click", (e) => {
+        if (!listCategoryFilterDropdown || !listCategoryFilterToggle) return;
+        if (!listCategoryFilterDropdown.classList.contains("is-open")) return;
+        if (listCategoryFilterDropdown.contains(e.target) || listCategoryFilterToggle.contains(e.target)) return;
+        listCategoryFilterDropdown.classList.remove("is-open");
+        listCategoryFilterDropdown.setAttribute("aria-hidden", "true");
     });
 
     // --- Toggle view all ---
@@ -344,8 +460,9 @@ document.addEventListener("DOMContentLoaded", () => {
         const categoriesHtml = word.categories && word.categories.length
             ? `<div class="word-categories">${word.categories.map(c => `<span class="word-category">${escapeHtml(c)}</span>`).join('')}</div>`
             : '';
+        const displayKana = escapeHtml(toSelectedKana(word.hiragana));
         item.innerHTML = `
-            <span class="word-hiragana">${escapeHtml(word.hiragana)}</span>
+            <span class="word-hiragana">${displayKana}</span>
             <div class="word-details">
                 <div class="word-romaji">${escapeHtml(word.romaji)}</div>
                 <div class="word-translation">
@@ -402,7 +519,9 @@ document.addEventListener("DOMContentLoaded", () => {
         // Filter by search query
         if (query) {
             list = list.filter((word) => {
-                const haystack = `${word.hiragana} ${word.romaji} ${word.translation} ${word.note || ""} ${word.categories?.join(" ") || ""}`.toLowerCase();
+                const hira = toKanaScript(word.hiragana, "hiragana");
+                const kata = toKanaScript(word.hiragana, "katakana");
+                const haystack = `${hira} ${kata} ${word.romaji} ${word.translation} ${word.note || ""} ${word.categories?.join(" ") || ""}`.toLowerCase();
                 return haystack.includes(query);
             });
         }
@@ -452,5 +571,8 @@ document.addEventListener("DOMContentLoaded", () => {
     }
 
     loadCategories();
+    renderKanaScriptSelector();
+    setKanaScript(getKanaScript());
+    renderListKanaToggle();
     loadWords();
 });

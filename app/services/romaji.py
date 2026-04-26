@@ -111,3 +111,50 @@ def romaji_to_hiragana(text: str) -> str:
             i += 1
 
     return "".join(result)
+
+
+def hiragana_to_katakana(text: str) -> str:
+    """Convert hiragana text to katakana.
+
+    Characters outside hiragana range are preserved as-is.
+    """
+    result: list[str] = []
+    for ch in text:
+        code = ord(ch)
+        if 0x3041 <= code <= 0x3096:
+            result.append(chr(code + 0x60))
+        else:
+            result.append(ch)
+    return "".join(result)
+
+
+def katakana_to_hiragana(text: str) -> str:
+    """Convert katakana text to hiragana.
+
+    Characters outside katakana range are preserved as-is.
+    """
+    result: list[str] = []
+    for ch in text:
+        code = ord(ch)
+        if 0x30A1 <= code <= 0x30F6:
+            result.append(chr(code - 0x60))
+        else:
+            result.append(ch)
+    return "".join(result)
+
+
+def romaji_to_katakana(text: str) -> str:
+    """Convert a romaji string to katakana."""
+    return hiragana_to_katakana(romaji_to_hiragana(text))
+
+
+def detect_kana_script(text: str) -> str:
+    """Detect whether a kana string is hiragana or katakana.
+
+    Defaults to hiragana when no katakana characters are found.
+    """
+    for ch in text:
+        code = ord(ch)
+        if 0x30A1 <= code <= 0x30FF:
+            return "katakana"
+    return "hiragana"

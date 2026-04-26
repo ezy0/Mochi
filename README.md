@@ -7,7 +7,8 @@
 ## Características principales
 
 - **Práctica dual**: Cambia entre el modo **Japonés → Español** (leer hiragana) y **Español → Japonés** (recordar la palabra).
-- **Escritura inteligente**: Escribe en romaji y el sistema te muestra hiragana en tiempo real.
+- **Doble alfabeto**: Practica en pantallas separadas de **Hiragana** y **Katakana** con el mismo flujo de flashcards.
+- **Escritura inteligente**: Escribe en romaji y el sistema te muestra kana en tiempo real.
 - **Gestión de vocabulario**: Añade, edita y elimina palabras fácilmente. Incluye buscador y validación de duplicados.
 - **Importar y exportar CSV**: Descarga tu colección o súbela con un archivo CSV.
 - **Temas**: Modo claro y oscuro con estética cálida.

@@ -54,6 +54,8 @@ document.addEventListener("DOMContentLoaded", () => {
 
     // Mode handling
     const modeToggle = document.getElementById("mode-toggle");
+    const practiceAlphabet = window.MOCHI_PRACTICE_ALPHABET === "katakana" ? "katakana" : "hiragana";
+    const practiceSymbol = practiceAlphabet === "katakana" ? "ア" : "あ";
     
     // Guard — elements may not exist if word_count == 0
     if (!questionHiragana) return;
@@ -61,6 +63,14 @@ document.addEventListener("DOMContentLoaded", () => {
     let currentWord = null;
     let stats = { correct: 0, incorrect: 0, streak: 0 };
     let allCategories = [];
+
+    function toPracticeKana(hiraganaText) {
+        return practiceAlphabet === "katakana" ? hiraganaToKatakana(hiraganaText) : hiraganaText;
+    }
+
+    function romajiToPracticeKana(text) {
+        return practiceAlphabet === "katakana" ? romajiToKatakana(text) : romajiToHiragana(text);
+    }
 
     function getMode() {
         return localStorage.getItem("mochi-practice-mode") || "jp-es";
@@ -81,7 +91,12 @@ document.addEventListener("DOMContentLoaded", () => {
     function updateModeButton() {
         if (!modeToggle) return;
         const mode = getMode();
-        modeToggle.querySelector(".mode-text").textContent = mode === "jp-es" ? "あ → ES" : "ES → あ";
+        const modeText = mode === "jp-es" ? `${practiceSymbol} → ES` : `ES → ${practiceSymbol}`;
+        modeToggle.querySelector(".mode-text").textContent = modeText;
+        const mobileModeText = document.querySelector(".mobile-mode-text");
+        const mobileModeIcon = document.querySelector(".mobile-mode-icon");
+        if (mobileModeText) mobileModeText.textContent = modeText;
+        if (mobileModeIcon) mobileModeIcon.textContent = practiceSymbol;
         if (ttsBtn) {
             ttsBtn.hidden = mode !== "jp-es";
         }
@@ -105,7 +120,9 @@ document.addEventListener("DOMContentLoaded", () => {
             localStorage.setItem("mochi-practice-mode", newMode);
             updateModeButton();
             if (currentWord && feedbackInline.hidden) {
-                questionHiragana.textContent = newMode === "jp-es" ? currentWord.hiragana : currentWord.translation;
+                questionHiragana.textContent = newMode === "jp-es"
+                    ? toPracticeKana(currentWord.hiragana)
+                    : currentWord.translation;
             }
         });
     }
@@ -315,7 +332,9 @@ document.addEventListener("DOMContentLoaded", () => {
             currentWord = await res.json();
             
             const mode = getMode();
-            questionHiragana.textContent = mode === "jp-es" ? currentWord.hiragana : currentWord.translation;
+            questionHiragana.textContent = mode === "jp-es"
+                ? toPracticeKana(currentWord.hiragana)
+                : currentWord.translation;
 
             // Animate in
             questionHiragana.style.opacity = "0";
@@ -343,7 +362,7 @@ document.addEventListener("DOMContentLoaded", () => {
     // --- Real-time hiragana preview while typing ---
     answerInput.addEventListener("input", () => {
         const val = answerInput.value.trim();
-        answerHiragana.textContent = val ? romajiToHiragana(val) : "";
+        answerHiragana.textContent = val ? romajiToPracticeKana(val) : "";
     });
 
     // --- Check answer ---
@@ -356,8 +375,9 @@ document.addEventListener("DOMContentLoaded", () => {
             return;
         }
 
-        const userHiragana = romajiToHiragana(val);
-        const isCorrect = userHiragana === currentWord.hiragana;
+        const userKana = romajiToPracticeKana(val);
+        const expectedKana = toPracticeKana(currentWord.hiragana);
+        const isCorrect = userKana === expectedKana;
 
         // Update stats
         if (isCorrect) {
@@ -381,11 +401,11 @@ document.addEventListener("DOMContentLoaded", () => {
         if (isCorrect) {
             fbText.textContent = `¡Correcto! — ${currentWord.translation}`;
         } else {
-            fbText.textContent = `${currentWord.romaji} (${currentWord.hiragana}) — ${currentWord.translation}`;
+            fbText.textContent = `${currentWord.romaji} (${expectedKana}) — ${currentWord.translation}`;
         }
 
         // Add to history
-        addHistoryEntry(currentWord, val, userHiragana, isCorrect);
+        addHistoryEntry(currentWord, val, userKana, isCorrect);
     }
 
     checkBtn.addEventListener("click", checkAnswer);
@@ -408,15 +428,15 @@ document.addEventListener("DOMContentLoaded", () => {
     nextBtn.addEventListener("click", loadWord);
 
     // --- History ---
-    function addHistoryEntry(word, userRomaji, userHiragana, isCorrect) {
+    function addHistoryEntry(word, userRomaji, userKana, isCorrect) {
         if (historyEmpty) historyEmpty.remove();
 
         const row = document.createElement("div");
         row.className = `history-row ${isCorrect ? "history-correct" : "history-incorrect"}`;
         row.innerHTML = `
             <span class="history-status">${isCorrect ? "✓" : "✗"}</span>
-            <span class="history-hiragana">${escapeHtml(word.hiragana)}</span>
-            <span class="history-answer">${escapeHtml(userRomaji)} → ${escapeHtml(userHiragana)}</span>
+            <span class="history-hiragana">${escapeHtml(toPracticeKana(word.hiragana))}</span>
+            <span class="history-answer">${escapeHtml(userRomaji)} → ${escapeHtml(userKana)}</span>
             <span class="history-translation">
                 ${escapeHtml(word.translation)}
                 ${word.note ? `<br><small class="history-note">${escapeHtml(word.note)}</small>` : ''}

@@ -108,5 +108,59 @@ function romajiToHiragana(text) {
     return result.join("");
 }
 
+/**
+ * Convert hiragana text to katakana.
+ * @param {string} text
+ * @returns {string}
+ */
+function hiraganaToKatakana(text) {
+    return Array.from(text).map((ch) => {
+        const code = ch.charCodeAt(0);
+        if (code >= 0x3041 && code <= 0x3096) {
+            return String.fromCharCode(code + 0x60);
+        }
+        return ch;
+    }).join("");
+}
+
+/**
+ * Convert katakana text to hiragana.
+ * @param {string} text
+ * @returns {string}
+ */
+function katakanaToHiragana(text) {
+    return Array.from(text).map((ch) => {
+        const code = ch.charCodeAt(0);
+        if (code >= 0x30A1 && code <= 0x30F6) {
+            return String.fromCharCode(code - 0x60);
+        }
+        return ch;
+    }).join("");
+}
+
+/**
+ * Convert romaji directly to katakana.
+ * @param {string} text
+ * @returns {string}
+ */
+function romajiToKatakana(text) {
+    return hiraganaToKatakana(romajiToHiragana(text));
+}
+
+/**
+ * Normalize kana to the requested script.
+ * @param {string} text
+ * @param {"hiragana"|"katakana"} script
+ * @returns {string}
+ */
+function toKanaScript(text, script = "hiragana") {
+    const hira = katakanaToHiragana(text || "");
+    return script === "katakana" ? hiraganaToKatakana(hira) : hira;
+}
+
 // Export for use in other scripts
 window.romajiToHiragana = romajiToHiragana;
+window.hiraganaToKatakana = hiraganaToKatakana;
+window.romajiToKatakana = romajiToKatakana;
+window.katakanaToHiragana = katakanaToHiragana;
+window.toKanaScript = toKanaScript;

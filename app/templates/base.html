@@ -28,7 +28,8 @@
 
             <!-- Desktop nav links -->
             <div class="nav-links">
-                <a href="/" class="nav-link {% block nav_home %}{% endblock %}">Inicio</a>
+                <a href="/" class="nav-link {% block nav_home %}{% endblock %}">Hiragana</a>
+                <a href="/katakana" class="nav-link {% block nav_katakana %}{% endblock %}">Katakana</a>
                 <a href="/add" class="nav-link {% block nav_add %}{% endblock %}">Añadir</a>
                 <span class="nav-separator"></span>
                 <button id="theme-toggle" class="nav-theme-toggle" title="Cambiar tema">
@@ -38,7 +39,7 @@
                 <button id="mode-toggle" class="nav-mode-toggle" title="Cambiar dirección de práctica">
                     <span class="mode-text">あ → ES</span>
                 </button>
-                <button id="hiragana-help-btn" class="nav-help-btn" title="Tabla de hiragana">
+                <button id="hiragana-help-btn" class="nav-help-btn" title="Tabla kana">
                     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9.09 9a3 3 0 1 1 5.82 1c0 2-3 2-3 4"></path><line x1="12" y1="17" x2="12" y2="17"></line></svg>
                 </button>
                 {% block nav_filters %}{% endblock %}
@@ -47,7 +48,7 @@
 
             <!-- Mobile: right-side actions (always visible) -->
             <div class="nav-mobile-actions">
-                <button id="mobile-hiragana-help-btn" class="nav-help-btn" title="Tabla de hiragana" aria-label="Tabla de hiragana">
+                <button id="mobile-hiragana-help-btn" class="nav-help-btn" title="Tabla kana" aria-label="Tabla kana">
                     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9.09 9a3 3 0 1 1 5.82 1c0 2-3 2-3 4"></path><line x1="12" y1="17" x2="12" y2="17"></line></svg>
                 </button>
                 <button id="hamburger-btn" class="hamburger-btn" aria-label="Abrir menú" aria-expanded="false">
@@ -64,8 +65,12 @@
                 <!-- Navigation links -->
                 <div class="mobile-nav-section">
                     <a href="/" class="mobile-nav-link {% block nav_home_mobile %}{% endblock %}">
-                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" width="18" height="18"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"></path><polyline points="9 22 9 12 15 12 15 22"></polyline></svg>
-                        Inicio
+                        <span class="mobile-kana-icon" aria-hidden="true">あ</span>
+                        Hiragana
+                    </a>
+                    <a href="/katakana" class="mobile-nav-link {% block nav_katakana_mobile %}{% endblock %}">
+                        <span class="mobile-kana-icon" aria-hidden="true">ア</span>
+                        Katakana
                     </a>
                     <a href="/add" class="mobile-nav-link {% block nav_add_mobile %}{% endblock %}">
                         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" width="18" height="18"><line x1="12" y1="5" x2="12" y2="19"></line><line x1="5" y1="12" x2="19" y2="12"></line></svg>
@@ -109,7 +114,11 @@
     <div id="hiragana-modal" class="hiragana-modal">
         <div class="hiragana-chart">
             <div class="modal-header">
-                <h2>Hiragana</h2>
+                <h2 id="kana-help-title">Hiragana</h2>
+                <div class="kana-help-switch" role="group" aria-label="Tipo de kana">
+                    <button type="button" class="kana-help-btn active" id="kana-help-hiragana">Hiragana</button>
+                    <button type="button" class="kana-help-btn" id="kana-help-katakana">Katakana</button>
+                </div>
                 <button id="hiragana-modal-close" class="modal-close">×</button>
             </div>
             <div class="modal-body">
@@ -414,7 +423,7 @@
         const mobileHiraganaHelpBtn = document.getElementById('mobile-hiragana-help-btn');
         if (mobileHiraganaHelpBtn) {
             mobileHiraganaHelpBtn.addEventListener('click', () => {
-                document.getElementById('hiragana-modal').style.display = 'flex';
+                openKanaHelpModal();
                 initializeHiraganaTtsButtons();
             });
         }
@@ -423,6 +432,42 @@
         const hiraganaModal = document.getElementById('hiragana-modal');
         const hiraganaHelpBtn = document.getElementById('hiragana-help-btn');
         const hiraganaModalClose = document.getElementById('hiragana-modal-close');
+        const kanaHelpTitle = document.getElementById('kana-help-title');
+        const kanaHelpHiraBtn = document.getElementById('kana-help-hiragana');
+        const kanaHelpKataBtn = document.getElementById('kana-help-katakana');
+        let kanaHelpScript = window.MOCHI_HELP_DEFAULT === 'katakana' ? 'katakana' : 'hiragana';
+
+        function setKanaHelpScript(script) {
+            kanaHelpScript = script === 'katakana' ? 'katakana' : 'hiragana';
+            if (kanaHelpTitle) {
+                kanaHelpTitle.textContent = kanaHelpScript === 'katakana' ? 'Katakana' : 'Hiragana';
+            }
+            if (kanaHelpHiraBtn) {
+                kanaHelpHiraBtn.classList.toggle('active', kanaHelpScript === 'hiragana');
+                kanaHelpHiraBtn.setAttribute('aria-pressed', kanaHelpScript === 'hiragana' ? 'true' : 'false');
+            }
+            if (kanaHelpKataBtn) {
+                kanaHelpKataBtn.classList.toggle('active', kanaHelpScript === 'katakana');
+                kanaHelpKataBtn.setAttribute('aria-pressed', kanaHelpScript === 'katakana' ? 'true' : 'false');
+            }
+
+            const cells = document.querySelectorAll('.hiragana-table td');
+            cells.forEach((cell) => {
+                const romajiElement = cell.querySelector('.romaji');
+                const kanaElement = cell.querySelector('.hiragana');
+                if (!romajiElement || !kanaElement) return;
+                const romaji = romajiElement.textContent.trim();
+                const kana = kanaHelpScript === 'katakana' ? romajiToKatakana(romaji) : romajiToHiragana(romaji);
+                kanaElement.textContent = kana;
+            });
+
+            initializeHiraganaTtsButtons();
+        }
+
+        function openKanaHelpModal() {
+            hiraganaModal.style.display = 'flex';
+            setKanaHelpScript(kanaHelpScript);
+        }
 
         function createHiraganaTtsButton(kana) {
             const btn = document.createElement('button');
@@ -453,21 +498,34 @@
                 if (!kana) return;
 
                 // Skip if already has a button
-                if (cell.querySelector('.hiragana-tts-btn')) return;
+                const existingBtn = cell.querySelector('.hiragana-tts-btn');
+                if (existingBtn) {
+                    existingBtn.dataset.kana = kana;
+                    existingBtn.setAttribute('aria-label', `Escuchar ${kana}`);
+                    return;
+                }
 
                 const speakerBtn = createHiraganaTtsButton(kana);
                 speakerBtn.addEventListener('click', (e) => {
                     e.stopPropagation();
                     speakerBtn.blur();
-                    playHiraganaTts(kana);
+                    playHiraganaTts(speakerBtn.dataset.kana || kana);
                 });
 
                 cell.appendChild(speakerBtn);
             });
         }
 
+        if (kanaHelpHiraBtn) {
+            kanaHelpHiraBtn.addEventListener('click', () => setKanaHelpScript('hiragana'));
+        }
+
+        if (kanaHelpKataBtn) {
+            kanaHelpKataBtn.addEventListener('click', () => setKanaHelpScript('katakana'));
+        }
+
         hiraganaHelpBtn.addEventListener('click', () => {
-            hiraganaModal.style.display = 'flex';
+            openKanaHelpModal();
             initializeHiraganaTtsButtons();
         });
 

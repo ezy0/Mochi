@@ -1,5 +1,6 @@
 """Pydantic schemas for Word validation and serialization."""
 from datetime import datetime
+from typing import Literal
 
 from pydantic import BaseModel, Field, field_validator
 
@@ -11,6 +12,7 @@ class WordCreate(BaseModel):
     translation: str = Field(..., min_length=1, max_length=255, examples=["cerezo"])
     note: str | None = Field(None, max_length=500, examples=["Flor de cerezo"])
     categories: list[str] = Field(default_factory=list, examples=[["naturaleza"]])
+    script: Literal["hiragana", "katakana"] = Field("hiragana", examples=["hiragana"])
 
 
 class WordUpdate(BaseModel):
@@ -20,6 +22,7 @@ class WordUpdate(BaseModel):
     translation: str | None = Field(None, min_length=1, max_length=255)
     note: str | None = Field(None, max_length=500)
     categories: list[str] | None = Field(None)
+    script: Literal["hiragana", "katakana"] | None = Field(None)
 
 
 class WordOut(BaseModel):

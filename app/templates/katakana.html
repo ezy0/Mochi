@@ -1,0 +1,30 @@
+{% extends "index.html" %}
+
+{% block head %}
+<script>
+    window.MOCHI_PRACTICE_ALPHABET = "katakana";
+    window.MOCHI_HELP_DEFAULT = "katakana";
+</script>
+{% endblock %}
+
+{% block nav_home %}{% endblock %}
+{% block nav_home_mobile %}{% endblock %}
+{% block nav_katakana %}active{% endblock %}
+{% block nav_katakana_mobile %}active{% endblock %}
+
+{% block scripts %}
+<script>
+    document.addEventListener("DOMContentLoaded", () => {
+        const modeText = document.querySelector("#mode-toggle .mode-text");
+        const mobileModeText = document.querySelector(".mobile-mode-text");
+        const mobileModeIcon = document.querySelector(".mobile-mode-icon");
+
+        const mode = localStorage.getItem("mochi-practice-mode") || "jp-es";
+        const label = mode === "jp-es" ? "ア → ES" : "ES → ア";
+        if (modeText) modeText.textContent = label;
+        if (mobileModeText) mobileModeText.textContent = label;
+        if (mobileModeIcon) mobileModeIcon.textContent = "ア";
+    });
+</script>
+<script src="/static/js/home.js"></script>
+{% endblock %}
