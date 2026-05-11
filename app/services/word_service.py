@@ -1,6 +1,6 @@
 """Business logic for word operations."""
 from sqlalchemy import func
-from sqlalchemy.orm import Session
+from sqlalchemy.orm import Session, selectinload
 
 from app.models.category import Category
 from app.models.word import Word
@@ -37,21 +37,21 @@ class WordService:
     @staticmethod
     def get_all(db: Session, skip: int = 0, limit: int = 100, category: str | None = None) -> list[Word]:
         """Return all words with optional pagination and category filter."""
-        query = db.query(Word)
+        query = db.query(Word).options(selectinload(Word.categories))
         if category:
-            query = query.join(Word.categories).filter(Word.categories.any(name=category.strip().lower()))
+            normalized = category.strip().lower()
+            if normalized:
+                query = query.filter(Word.categories.any(name=normalized))
         return query.offset(skip).limit(limit).all()
 
     @staticmethod
     def get_random(db: Session, categories: list[str] | None = None) -> Word | None:
         """Return a single random word, optionally filtered by categories."""
-        query = db.query(Word)
+        query = db.query(Word).options(selectinload(Word.categories))
         if categories:
             normalized = [c.strip().lower() for c in categories if c.strip()]
             if normalized:
-                query = query.join(Word.categories).filter(
-                    Category.name.in_(normalized)
-                )
+                query = query.filter(Word.categories.any(Category.name.in_(normalized)))
         return query.order_by(func.random()).first()
 
     @staticmethod

@@ -109,33 +109,96 @@ function romajiToHiragana(text) {
 }
 
 /**
+ * Map hiragana characters to their inherent vowel (a/i/u/e/o).
+ */
+const HIRAGANA_VOWEL_MAP = {
+    "あ":"a","い":"i","う":"u","え":"e","お":"o",
+    "か":"a","き":"i","く":"u","け":"e","こ":"o",
+    "が":"a","ぎ":"i","ぐ":"u","げ":"e","ご":"o",
+    "さ":"a","し":"i","す":"u","せ":"e","そ":"o",
+    "ざ":"a","じ":"i","ず":"u","ぜ":"e","ぞ":"o",
+    "た":"a","ち":"i","つ":"u","て":"e","と":"o",
+    "だ":"a","ぢ":"i","づ":"u","で":"e","ど":"o",
+    "な":"a","に":"i","ぬ":"u","ね":"e","の":"o",
+    "は":"a","ひ":"i","ふ":"u","へ":"e","ほ":"o",
+    "ば":"a","び":"i","ぶ":"u","べ":"e","ぼ":"o",
+    "ぱ":"a","ぴ":"i","ぷ":"u","ぺ":"e","ぽ":"o",
+    "ま":"a","み":"i","む":"u","め":"e","も":"o",
+    "や":"a","ゆ":"u","よ":"o",
+    "ら":"a","り":"i","る":"u","れ":"e","ろ":"o",
+    "わ":"a","ゐ":"i","ゑ":"e","を":"o",
+    "ゃ":"a","ゅ":"u","ょ":"o",
+    "ぁ":"a","ぃ":"i","ぅ":"u","ぇ":"e","ぉ":"o",
+};
+
+const HIRAGANA_VOWELS = {"あ":"a","い":"i","う":"u","え":"e","お":"o"};
+
+/**
  * Convert hiragana text to katakana.
+ * Long vowels are replaced with ー (chōon mark) as is standard in katakana.
  * @param {string} text
  * @returns {string}
  */
 function hiraganaToKatakana(text) {
-    return Array.from(text).map((ch) => {
+    const result = [];
+    let prevVowel = null;
+
+    for (const ch of text) {
         const code = ch.charCodeAt(0);
-        if (code >= 0x3041 && code <= 0x3096) {
-            return String.fromCharCode(code + 0x60);
+
+        if (HIRAGANA_VOWELS[ch] !== undefined) {
+            const vowel = HIRAGANA_VOWELS[ch];
+            if (prevVowel === vowel) {
+                // This vowel extends the previous syllable → use chōon
+                result.push("ー");
+                // prevVowel stays the same
+            } else {
+                // Standalone vowel starting a new syllable
+                result.push(String.fromCharCode(code + 0x60));
+                prevVowel = vowel;
+            }
+        } else if (code >= 0x3041 && code <= 0x3096) {
+            // Regular hiragana → convert to katakana
+            result.push(String.fromCharCode(code + 0x60));
+            prevVowel = HIRAGANA_VOWEL_MAP[ch] || null;
+        } else {
+            // Non-hiragana character
+            result.push(ch);
+            prevVowel = null;
         }
-        return ch;
-    }).join("");
+    }
+
+    return result.join("");
 }
+
+const VOWEL_TO_HIRAGANA = {"a":"あ","i":"い","u":"う","e":"え","o":"お"};
 
 /**
  * Convert katakana text to hiragana.
+ * The chōon mark ー is expanded back to the appropriate vowel.
  * @param {string} text
  * @returns {string}
  */
 function katakanaToHiragana(text) {
-    return Array.from(text).map((ch) => {
+    const result = [];
+    for (const ch of text) {
         const code = ch.charCodeAt(0);
-        if (code >= 0x30A1 && code <= 0x30F6) {
-            return String.fromCharCode(code - 0x60);
+        if (ch === "ー") {
+            // Expand chōon to the vowel of the previous hiragana character
+            if (result.length > 0) {
+                const last = result[result.length - 1];
+                const v = HIRAGANA_VOWEL_MAP[last];
+                result.push(v ? VOWEL_TO_HIRAGANA[v] : "ー");
+            } else {
+                result.push("ー");
+            }
+        } else if (code >= 0x30A1 && code <= 0x30F6) {
+            result.push(String.fromCharCode(code - 0x60));
+        } else {
+            result.push(ch);
         }
-        return ch;
-    }).join("");
+    }
+    return result.join("");
 }
 
 /**

@@ -55,6 +55,50 @@ _MAX_LEN = max(len(k) for k in _MAP_DICT)
 _GEMINATE_CONSONANTS = set("bcdfghjklmpqrstvwxyz")
 
 
+_HIRAGANA_VOWEL_MAP = {
+    # Vowels
+    "あ": "a", "い": "i", "う": "u", "え": "e", "お": "o",
+    # K-row
+    "か": "a", "き": "i", "く": "u", "け": "e", "こ": "o",
+    # G-row
+    "が": "a", "ぎ": "i", "ぐ": "u", "げ": "e", "ご": "o",
+    # S-row
+    "さ": "a", "し": "i", "す": "u", "せ": "e", "そ": "o",
+    # Z-row
+    "ざ": "a", "じ": "i", "ず": "u", "ぜ": "e", "ぞ": "o",
+    # T-row
+    "た": "a", "ち": "i", "つ": "u", "て": "e", "と": "o",
+    # D-row
+    "だ": "a", "ぢ": "i", "づ": "u", "で": "e", "ど": "o",
+    # N-row
+    "な": "a", "に": "i", "ぬ": "u", "ね": "e", "の": "o",
+    # H-row
+    "は": "a", "ひ": "i", "ふ": "u", "へ": "e", "ほ": "o",
+    # B-row
+    "ば": "a", "び": "i", "ぶ": "u", "べ": "e", "ぼ": "o",
+    # P-row
+    "ぱ": "a", "ぴ": "i", "ぷ": "u", "ぺ": "e", "ぽ": "o",
+    # M-row
+    "ま": "a", "み": "i", "む": "u", "め": "e", "も": "o",
+    # Y-row
+    "や": "a", "ゆ": "u", "よ": "o",
+    # R-row
+    "ら": "a", "り": "i", "る": "u", "れ": "e", "ろ": "o",
+    # W-row
+    "わ": "a", "ゐ": "i", "ゑ": "e", "を": "o",
+    # N
+    "ん": None,
+    # Small kana (used in digraphs — vowel of the small char determines the combo's vowel)
+    "ゃ": "a", "ゅ": "u", "ょ": "o",
+    "ぁ": "a", "ぃ": "i", "ぅ": "u", "ぇ": "e", "ぉ": "o",
+}
+
+# Hiragana standalone vowels → their vowel category
+_HIRAGANA_VOWEL_CHARS = {"あ": "a", "い": "i", "う": "u", "え": "e", "お": "o"}
+
+_VOWEL_TO_HIRAGANA = {"a": "あ", "i": "い", "u": "う", "e": "え", "o": "お"}
+
+
 def romaji_to_hiragana(text: str) -> str:
     """Convert a romaji string to hiragana.
 
@@ -113,30 +157,77 @@ def romaji_to_hiragana(text: str) -> str:
     return "".join(result)
 
 
+def _hiragana_vowel(ch: str) -> str | None:
+    """Return the inherent vowel (a/i/u/e/o) of a hiragana character, or None."""
+    return _HIRAGANA_VOWEL_MAP.get(ch)
+
+
 def hiragana_to_katakana(text: str) -> str:
     """Convert hiragana text to katakana.
 
+    Long vowels are replaced with ー (chōon mark) as is standard in katakana.
     Characters outside hiragana range are preserved as-is.
     """
     result: list[str] = []
+    prev_vowel: str | None = None  # Tracks the vowel of the previous syllable
+
     for ch in text:
         code = ord(ch)
-        if 0x3041 <= code <= 0x3096:
+
+        if ch in _HIRAGANA_VOWEL_CHARS:
+            vowel = _HIRAGANA_VOWEL_CHARS[ch]
+            if prev_vowel == vowel:
+                # This vowel extends the previous syllable → use chōon
+                result.append("ー")
+                # prev_vowel stays the same (ー extends it)
+            else:
+                # Standalone vowel starting a new syllable
+                result.append(chr(code + 0x60))
+                prev_vowel = vowel
+        elif 0x3041 <= code <= 0x3096:
+            # Regular hiragana → convert to katakana
             result.append(chr(code + 0x60))
+            prev_vowel = _hiragana_vowel(ch)
         else:
+            # Non-hiragana (punctuation, kanji, etc.)
             result.append(ch)
+            prev_vowel = None
+
     return "".join(result)
+
+
+def _katakana_vowel_hiragana(ch: str) -> str | None:
+    """Return the hiragana vowel corresponding to a katakana character's vowel column."""
+    # Convert katakana to hiragana first, then look up its vowel
+    code = ord(ch)
+    if 0x30A1 <= code <= 0x30F6:
+        hira = chr(code - 0x60)
+        vowel = _hiragana_vowel(hira)
+        return _VOWEL_TO_HIRAGANA.get(vowel) if vowel else None
+    return None
 
 
 def katakana_to_hiragana(text: str) -> str:
     """Convert katakana text to hiragana.
 
-    Characters outside katakana range are preserved as-is.
+    The chōon mark ー is converted back to the appropriate hiragana vowel
+    based on the preceding character. Other characters outside katakana range
+    are preserved as-is.
     """
     result: list[str] = []
     for ch in text:
         code = ord(ch)
-        if 0x30A1 <= code <= 0x30F6:
+        if ch == "ー":
+            # Expand chōon to the vowel of the previous character
+            if result:
+                prev_vowel = _katakana_vowel_hiragana(text[0])  # fallback
+                # Look at the last hiragana char we emitted
+                last = result[-1]
+                v = _hiragana_vowel(last)
+                result.append(_VOWEL_TO_HIRAGANA.get(v, "ー"))
+            else:
+                result.append("ー")
+        elif 0x30A1 <= code <= 0x30F6:
             result.append(chr(code - 0x60))
         else:
             result.append(ch)
